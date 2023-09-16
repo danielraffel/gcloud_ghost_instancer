@@ -74,42 +74,56 @@ EOF
     
     # Configure MySQL as follows to avoid sudo mysql_secure_installation which is interactive and requires a user to enter details
     # By default, MySQL may have the validate_password plugin enabled, which enforces password strength policies
-    sudo mysql -uroot -p$mysql_password -e "UNINSTALL PLUGIN validate_password;"
+#    sudo mysql -uroot -p$mysql_password -e "UNINSTALL PLUGIN validate_password;"
     # Remove the anonymous user accounts, which can be a security risk if left in the MySQL database
-    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'localhost'"
+#    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'localhost'"
     # Allow Root Login Remotely -- don't think we need to do this
     # mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY 'your_password';"
     # Because our hostname varies we'll use some Bash magic here.
-    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'$(hostname)'"
+#    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'$(hostname)'"
     # Drops the 'test' database, which is a default database that may not be needed in a production environment
     sudo mysql -uroot -p$mysql_password -e "DROP DATABASE test"
-    # Reloads the privilege tables, ensuring that the changes made to user accounts and databases take effect immediately
-    sudo mysql -uroot -p$mysql_password -e "FLUSH PRIVILEGES"
+#    # Reloads the privilege tables, ensuring that the changes made to user accounts and databases take effect immediately
+#    sudo mysql -uroot -p$mysql_password -e "FLUSH PRIVILEGES"
+
+    # Define the MySQL configuration file
+    mysql_config_file="/etc/mysql/my.cnf"
+
+    # # Turn off MySQL’s performance schema to reduce its memory usage
+    # # Using echo and tee to add configuration to my.cnf
+    # # echo "[mysqld]" > "$mysql_config_file"
+    # # echo "performance_schema=0" >> "$mysql_config_file"
+    # echo "[mysqld]" | sudo tee "$mysql_config_file"
+    # echo "performance_schema=0" | sudo tee -a "$mysql_config_file"
+
+    # #Restart MySQL and log in:
+    # sudo /etc/init.d/mysql restart
+
+    # # Add MySQL root user and password to the configuration file to make it easy to access at the command line
+    # # echo "[client]" > "$mysql_config_file"
+    # # echo "user=root" >> "$mysql_config_file"
+    # # echo "password=$mysql_password" >> "$mysql_config_file"
+    # echo "[client]" | sudo tee "$mysql_config_file"
+    # echo "user=root" | sudo tee -a "$mysql_config_file"
+    # echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
 
     # Define the MySQL configuration file
     mysql_config_file="/etc/mysql/my.cnf"
 
     # Turn off MySQL’s performance schema to reduce its memory usage
-    # Using echo and tee to add configuration to my.cnf
-    # echo "[mysqld]" > "$mysql_config_file"
-    # echo "performance_schema=0" >> "$mysql_config_file"
     echo "[mysqld]" | sudo tee "$mysql_config_file"
     echo "performance_schema=0" | sudo tee -a "$mysql_config_file"
+
+    # Add MySQL root user and password to the configuration file to make it easy to access at the command line
+    echo "[client]" | sudo tee -a "$mysql_config_file"
+    echo "user=root" | sudo tee -a "$mysql_config_file"
+    echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
 
     #Restart MySQL and log in:
     sudo /etc/init.d/mysql restart
 
-    # Add MySQL root user and password to the configuration file to make it easy to access at the command line
-    # echo "[client]" > "$mysql_config_file"
-    # echo "user=root" >> "$mysql_config_file"
-    # echo "password=$mysql_password" >> "$mysql_config_file"
-    echo "[client]" | sudo tee "$mysql_config_file"
-    echo "user=root" | sudo tee -a "$mysql_config_file"
-    echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
-
-
     # Connect to MySQL using the configuration file
-    sudo mysql --defaults-extra-file="$mysql_config_file"
+#    sudo mysql --defaults-extra-file="$mysql_config_file"
 
     # Optional: Remove MySQL user and password from the configuration file but it's worth noting it's stored in Ghost config.production.json
     # sed -i '/^\[client\]$/,/^\(user=root\|password=\)$/d' "$mysql_config_file"
