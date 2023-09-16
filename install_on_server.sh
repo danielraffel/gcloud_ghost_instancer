@@ -195,7 +195,8 @@ set_up_ghost() {
     # Prompt for the Ghost URL using the validate_url and get_valid_url functions
     # read -p "Enter the URL where you plan to host your Ghost blog including http:// or https://: " url
     echo "Getting valid Ghost URL..." >> debug.log
-    get_valid_url
+    # functions to get a user entered URL are not working so disabling and hardcoding for now (also chaning url in config from $url to http://localhost:2368/)
+    # get_valid_url
 
     # Define the path to save the config.production.json file
     config_file_path="/var/www/ghost/config.production.json"
@@ -204,7 +205,7 @@ set_up_ghost() {
     echo "Creating config.production.json file..." >> debug.log
     cat <<EOF > "$config_file_path"
     {
-        "url": "$url",
+        "url": "http://localhost:2368/",
         "database": {
             "client": "mysql",
             "connection": {
