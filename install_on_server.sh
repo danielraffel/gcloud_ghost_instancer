@@ -1,6 +1,8 @@
 #!/bin/bash
 
 install_ghost_dependencies() {
+    # Update Linux
+    apt update && apt -y upgrade
     #free up RAM by disabling snap
     sudo systemctl stop snapd.service
     sudo systemctl disable snapd.service
@@ -118,9 +120,8 @@ EOF
 
 set_up_ghost() {
     # Install Ghost CLI
-    # sudo npm install ghost-cli@latest -g
-    echo "Installing Ghost CLI" >> debug.log
-    sudo npm install ghost-cli@latest -g >> debug.log 2>&1
+    sudo npm install ghost-cli@latest -g
+    # sudo npm install ghost-cli@latest -g >> debug.log 2>&1
 
     #Make a new directory called ghost, set its permissions, then navigate to it:
     sudo mkdir -p /var/www/ghost
@@ -134,7 +135,7 @@ set_up_ghost() {
 
     # Navigate to the website folder and install Ghost:
     # cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
-    cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url https://$INSTANCE_IP/ --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
+    cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url https://$INSTANCE_IP --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file
@@ -146,7 +147,6 @@ set_up_ghost() {
     fi
 
     # Add MySQL commands to address the issue
-    echo "Line 220 Addressing MySQL issues, if any..."
     cat <<EOF > "$sql_file2"
     ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$mysql_password';
 EOF
@@ -158,7 +158,6 @@ EOF
     rm -f "$sql_file2"
 
     #then run:
-    echo "Line 233 Starting Ghost..."
     ghost start 
 }
 
