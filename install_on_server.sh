@@ -1,6 +1,10 @@
 #!/bin/bash
 
 install_ghost_dependencies() {
+    #free up RAM by disabling snap
+    sudo systemctl stop snapd.service
+    sudo systemctl disable snapd.service
+
     #Install Nginx and open the firewall
     sudo apt install -y nginx && sudo ufw allow 'Nginx Full'
 
@@ -123,9 +127,14 @@ set_up_ghost() {
     sudo chown service-account:service-account /var/www/ghost
     sudo chmod 775 /var/www/ghost
 
+    # Set up ghostuser, give them sudo and change folder ownership:
+    adduser ghostuser
+    usermod -aG sudo ghostuser
+    sudo chown -R ghost:ghost /var/www/ghost/content
+
     # Navigate to the website folder and install Ghost:
     # cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
-    cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url http://$INSTANCE_IP:2368/ --db MySQL --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
+    cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url http://$INSTANCE_IP:2368/ --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file

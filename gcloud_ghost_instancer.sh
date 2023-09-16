@@ -234,7 +234,7 @@ create_and_add_ssh_keys() {
 create_instance () {
   gcloud compute instances create $INSTANCE_NAME \
     --zone=$ZONE \
-    --machine-type=e2-micro \
+    --machine-type=e2-medium \
     --image-project=ubuntu-os-cloud \
     --image-family=ubuntu-2204-lts \
     --boot-disk-size=30GB \
@@ -423,7 +423,7 @@ set_password_on_remote() {
     if [ "$1" == "debug_vm" ]; then
       debug_vm
       setup_vm_instance
-      install_ghost_dependencies
+      # install_ghost_dependencies
       exit 0
     fi
 
@@ -441,7 +441,7 @@ set_password_on_remote() {
     create_keys
     create_instance
     ssh_instance
-    install_ghost_dependencies
+    # install_ghost_dependencies
 }
 
 main "$@"
