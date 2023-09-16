@@ -2,7 +2,7 @@
 
 install_ghost_dependencies() {
     # Update Linux
-    apt update && apt -y upgrade
+    sudo apt update && apt -y upgrade
     #free up RAM by disabling snap
     sudo systemctl stop snapd.service
     sudo systemctl disable snapd.service
