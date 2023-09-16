@@ -129,8 +129,8 @@ set_up_ghost() {
     sudo chmod 775 /var/www/ghost
 
     # Set up ghostuser, give them sudo and change folder ownership:
-    adduser ghostuser
-    usermod -aG sudo ghostuser
+    sudo adduser ghostuser
+    sudo usermod -aG sudo ghostuser
     sudo chown -R ghost:ghost /var/www/ghost/content
 
     # Navigate to the website folder and install Ghost:
@@ -158,7 +158,8 @@ EOF
     rm -f "$sql_file2"
 
     #then run:
-    ghost start 
+    ghost start
+    ghost ls
 }
 
 enable_ghost_auto_start() {
