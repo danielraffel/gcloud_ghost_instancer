@@ -241,8 +241,9 @@ create_instance () {
     --boot-disk-size=30GB \
     --boot-disk-type=pd-standard \
     --tags=mail,http-server,https-server \
-    --shielded-secure-boot=false \
-    --shielded-vtpm=false \
+    --no-shielded-secure-boot \
+    --no-shielded-vtpm \
+    --no-shielded-integrity-monitoring \
     --scopes=https://www.googleapis.com/auth/cloud-platform \
     --service-account service-account@$PROJECT_ID.iam.gserviceaccount.com \
     --metadata-from-file ssh-keys-for-root=$HOME/.ssh/root_key-${INSTANCE_NAME}.pub,ssh-keys-for-service-account=$HOME/.ssh/service_account_key-${INSTANCE_NAME}.pub \
