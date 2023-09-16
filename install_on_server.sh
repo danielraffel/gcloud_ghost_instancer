@@ -1,6 +1,6 @@
 #!/bin/bash
 
-install_ghost_dependencies () {
+install_ghost_dependencies() {
     #Install Nginx and open the firewall
     sudo apt install -y nginx && sudo ufw allow 'Nginx Full'
 
@@ -122,7 +122,6 @@ EOF
 
     #Restart MySQL and log in:
     # DEBUG ECHO
-    echo "Line 123 sudo /etc/init.d/mysql restart"
     sudo /etc/init.d/mysql restart
 
     # Connect to MySQL using the configuration file
@@ -181,7 +180,7 @@ get_valid_url() {
 }
 
 
-set_up_ghost () {
+set_up_ghost() {
     # Install Ghost CLI
     # sudo npm install ghost-cli@latest -g
     echo "Installing Ghost CLI" >> debug.log
@@ -253,7 +252,7 @@ EOF
     ghost start 
 }
 
-enable_ghost_auto_start () {
+enable_ghost_auto_start() {
     #Enable Autostart from the home directory of service_account, run:
     cd
 
