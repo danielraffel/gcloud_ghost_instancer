@@ -1,3 +1,5 @@
+Note: As of 9/16/23 this doesn't quite work yet...will return to it soon.
+
 **README.md for gcloud_ghost_instancer.sh**
 
 **About**
