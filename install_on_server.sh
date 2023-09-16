@@ -151,7 +151,6 @@ set_up_ghost () {
     sudo chown service_account:service_account /var/www/ghost
     sudo chmod 775 /var/www/ghost
 
-
     # Prompt for the Ghost URL using the validate_url and get_valid_url functions
     # read -p "Enter the URL where you plan to host your Ghost blog including http:// or https://: " url
     get_valid_url
@@ -195,7 +194,7 @@ EOF
 
     # Add MySQL commands to address the issue
     cat <<EOF > "$sql_file2"
-    ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY 'yourpasswordhere';
+    ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$mysql_password';
     QUIT;
 EOF
 
