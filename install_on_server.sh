@@ -86,15 +86,8 @@ EOF
 #    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'$(hostname)'"
     # Drops the 'test' database, which is a default database that may not be needed in a production environment
 #    sudo mysql -uroot -p$mysql_password -e "DROP DATABASE test"
-#    # Reloads the privilege tables, ensuring that the changes made to user accounts and databases take effect immediately
+    # Reloads the privilege tables, ensuring that the changes made to user accounts and databases take effect immediately
 #    sudo mysql -uroot -p$mysql_password -e "FLUSH PRIVILEGES"
-
-    # # Turn off MySQL’s performance schema to reduce its memory usage
-    # # Using echo and tee to add configuration to my.cnf
-    # # echo "[mysqld]" > "$mysql_config_file"
-    # # echo "performance_schema=0" >> "$mysql_config_file"
-    # echo "[mysqld]" | sudo tee "$mysql_config_file"
-    # echo "performance_schema=0" | sudo tee -a "$mysql_config_file"
 
     # #Restart MySQL and log in:
     # sudo /etc/init.d/mysql restart
@@ -115,60 +108,9 @@ EOF
     sudo /etc/init.d/mysql restart
 
     # Connect to MySQL using the configuration file
-#    sudo mysql --defaults-extra-file="$mysql_config_file"
+    # sudo mysql --defaults-extra-file="$mysql_config_file"
 
-    # Optional: Remove MySQL user and password from the configuration file but it's worth noting it's stored in Ghost config.production.json
-    # sed -i '/^\[client\]$/,/^\(user=root\|password=\)$/d' "$mysql_config_file"
 }
-
-# Function to validate a given URL
-validate_url() {
-  # If URL starts with 'http' or 'https', return 0 (success)
-  case "$1" in
-    http*://*) return 0;;
-    # Otherwise, return 1 (failure)
-    *) return 1;;
-  esac
-}
-
-# Function to get a valid URL from the user
-get_valid_url() {
-  # Start an infinite loop until a valid URL is obtained
-  while :; do
-    # Prompt the user for a URL
-    read -p "Enter the URL where you plan to host your Ghost blog (including http:// or https://): " url
-
-    # Check if the URL field is empty
-    if [ -z "$url" ]; then
-      # Prompt the user to use the instance's IP address
-      read -p "You didn't enter a URL. Do you want to use the instance's IP address ($INSTANCE_IP)? [y/n]: " use_ip
-
-      # If user confirms, set the URL to the instance IP and break the loop
-      if [ "$use_ip" = "y" ]; then
-        url="http://$INSTANCE_IP"
-        break
-      fi
-      # If the user doesn't confirm, loop back
-      continue
-    fi
-
-    # Validate the entered URL
-    if validate_url "$url"; then
-      # Confirm the valid URL with the user
-      read -p "You entered $url. Is this correct? [y/n]: " confirm
-
-      # If the user confirms, break the loop
-      if [ "$confirm" = "y" ]; then
-        break
-      fi
-    else
-      # If the URL is invalid, show an error message and loop back
-      echo "Invalid URL format. Make sure it starts with http:// or https:// and is a valid domain."
-      continue
-    fi
-  done
-}
-
 
 set_up_ghost() {
     # Install Ghost CLI
@@ -181,16 +123,9 @@ set_up_ghost() {
     sudo chown service-account:service-account /var/www/ghost
     sudo chmod 775 /var/www/ghost
 
-    # Prompt for the Ghost URL using the validate_url and get_valid_url functions
-    # read -p "Enter the URL where you plan to host your Ghost blog including http:// or https://: " url
-    echo "Getting valid Ghost URL..." >> debug.log
-    # functions to get a user entered URL are not working so disabling and hardcoding for now (also chaning url in config from $url to http://localhost:2368/)
-    # get_valid_url
-
     # Navigate to the website folder and install Ghost:
     # cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
     cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url http://$INSTANCE_IP:2368/ --db MySQL --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
-
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file
