@@ -48,8 +48,7 @@ install_ghost_dependencies() {
     exit 1
     fi
 
-    # Create a MySQL Commands File
-    # Create a temporary SQL file
+    # Create a temporary MySQL Commands File
     sql_file=$(mktemp)
 
     if [ -z "$sql_file" ]; then
@@ -100,14 +99,6 @@ EOF
     # #Restart MySQL and log in:
     # sudo /etc/init.d/mysql restart
 
-    # # Add MySQL root user and password to the configuration file to make it easy to access at the command line
-    # # echo "[client]" > "$mysql_config_file"
-    # # echo "user=root" >> "$mysql_config_file"
-    # # echo "password=$mysql_password" >> "$mysql_config_file"
-    # echo "[client]" | sudo tee "$mysql_config_file"
-    # echo "user=root" | sudo tee -a "$mysql_config_file"
-    # echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
-
     # Define the MySQL configuration file
     mysql_config_file="/etc/mysql/my.cnf"
 
@@ -121,7 +112,6 @@ EOF
     echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
 
     #Restart MySQL and log in:
-    # DEBUG ECHO
     sudo /etc/init.d/mysql restart
 
     # Connect to MySQL using the configuration file
@@ -186,7 +176,6 @@ set_up_ghost() {
     echo "Installing Ghost CLI" >> debug.log
     sudo npm install ghost-cli@latest -g >> debug.log 2>&1
 
-
     #Make a new directory called ghost, set its permissions, then navigate to it:
     sudo mkdir -p /var/www/ghost
     sudo chown service-account:service-account /var/www/ghost
@@ -197,32 +186,6 @@ set_up_ghost() {
     echo "Getting valid Ghost URL..." >> debug.log
     # functions to get a user entered URL are not working so disabling and hardcoding for now (also chaning url in config from $url to http://localhost:2368/)
     # get_valid_url
-
-    # Define the path to save the config.production.json file
-    config_file_path="/var/www/ghost/config.production.json"
-
-    # Create a config.production.json file with the Ghost URL and MySQL password set by variables
-    echo "Creating config.production.json file..." >> debug.log
-    cat <<EOF > "$config_file_path"
-    {
-        "url": "http://localhost:2368/",
-        "database": {
-            "client": "mysql",
-            "connection": {
-                "host": "localhost",
-                "user": "root",
-                "password": "$mysql_password",
-                "database": "ghost_prod"
-            }
-        },
-        "server": {
-            "host": "127.0.0.1",
-            "port": 2368
-        }
-    }
-EOF
-
-    echo "Config file saved to $config_file_path" >> debug.log
 
     # Navigate to the website folder and install Ghost:
     cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
@@ -258,7 +221,7 @@ enable_ghost_auto_start() {
     cd
 
     # Define the command to add to the cron job in this case starting ghost on reboot
-    CRON_COMMAND="@reboot cd /var/www/ghost && /usr/bin/ghost start"
+    CRON_COMMAND="@reboot /bin/bash -c 'cd /var/www/ghost && ghost start'"
 
     # Use echo and a pipe to add the command to the crontab
     echo "$CRON_COMMAND" | crontab -
