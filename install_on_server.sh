@@ -57,7 +57,6 @@ install_ghost_dependencies () {
     FLUSH PRIVILEGES;
     USE mysql;
     ALTER USER 'root'@'localhost' IDENTIFIED BY '$mysql_password';
-    QUIT;
 EOF
 
     # Execute MySQL commands
@@ -70,6 +69,8 @@ EOF
     sudo systemctl unset-environment MYSQLD_OPTS
     sudo systemctl revert mysql
     sudo killall -u mysql
+    # DEBUG ECHO
+    echo "Line 73 sudo systemctl restart mysql.service"
     sudo systemctl restart mysql.service
     
     # Configure MySQL as follows to avoid sudo mysql_secure_installation which is interactive and requires a user to enter details
@@ -82,12 +83,9 @@ EOF
     # Because our hostname varies we'll use some Bash magic here.
 #    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'$(hostname)'"
     # Drops the 'test' database, which is a default database that may not be needed in a production environment
-    sudo mysql -uroot -p$mysql_password -e "DROP DATABASE test"
+#    sudo mysql -uroot -p$mysql_password -e "DROP DATABASE test"
 #    # Reloads the privilege tables, ensuring that the changes made to user accounts and databases take effect immediately
 #    sudo mysql -uroot -p$mysql_password -e "FLUSH PRIVILEGES"
-
-    # Define the MySQL configuration file
-    mysql_config_file="/etc/mysql/my.cnf"
 
     # # Turn off MySQL’s performance schema to reduce its memory usage
     # # Using echo and tee to add configuration to my.cnf
@@ -120,6 +118,8 @@ EOF
     echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
 
     #Restart MySQL and log in:
+    # DEBUG ECHO
+    echo "Line 123 sudo /etc/init.d/mysql restart"
     sudo /etc/init.d/mysql restart
 
     # Connect to MySQL using the configuration file
@@ -143,27 +143,43 @@ get_valid_url() {
   while :; do
     read -p "Enter the URL where you plan to host your Ghost blog (including http:// or https://): " url
 
+    # Condition 1 and 2: Check if the user entered a custom URL or wants to use the instance IP
     if [ -z "$url" ]; then
       read -p "You didn't enter a URL. Do you want to use the instance's IP address ($INSTANCE_IP)? [y/n]: " use_ip
+
+      # Condition 3: Continue with INSTANCE_IP if 'y'
       if [ "$use_ip" == "y" ]; then
         url="http://$INSTANCE_IP"
         break
-      else
-        echo "Please enter a valid URL."
       fi
-    elif validate_url "$url"; then
+
+      # Condition 4: Go back to the first question
+      continue
+    fi
+
+    # Condition 5: Check if the entered URL is valid
+    if validate_url "$url"; then
+      # Condition 7: Confirm the URL
       read -p "You entered $url. Is this correct? [y/n]: " confirm
+      
+      # Condition 8: If the URL is valid, continue
       if [ "$confirm" == "y" ]; then
         break
       fi
     else
+      # Condition 6: Explain that the URL is invalid and why
       echo "Invalid URL format. Make sure it starts with http:// or https:// and is a valid domain."
+      continue
     fi
+    
+    # Condition 9 and 4: Go back to the first question
   done
 }
 
 set_up_ghost () {
     # Install Ghost CLI
+    # DEBUG Install Ghost CLI
+    echo "Line 168 sudo npm install ghost-cli@latest -g"
     sudo npm install ghost-cli@latest -g
 
     #Make a new directory called ghost, set its permissions, then navigate to it:
@@ -173,12 +189,14 @@ set_up_ghost () {
 
     # Prompt for the Ghost URL using the validate_url and get_valid_url functions
     # read -p "Enter the URL where you plan to host your Ghost blog including http:// or https://: " url
+    echo "Line 179 Getting valid Ghost URL..."
     get_valid_url
 
     # Define the path to save the config.production.json file
     config_file_path="/var/www/ghost/config.production.json"
 
     # Create a config.production.json file with the Ghost URL and MySQL password set by variables
+    echo "Line 186 Creating config.production.json file..."
     cat <<EOF > "$config_file_path"
     {
         "url": "$url",
@@ -213,9 +231,9 @@ EOF
     fi
 
     # Add MySQL commands to address the issue
+    echo "Line 220 Addressing MySQL issues, if any..."
     cat <<EOF > "$sql_file2"
     ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$mysql_password';
-    QUIT;
 EOF
 
     # Execute MySQL commands
@@ -225,6 +243,7 @@ EOF
     rm -f "$sql_file2"
 
     #then run:
+    echo "Line 233 Starting Ghost..."
     ghost start 
 }
 
