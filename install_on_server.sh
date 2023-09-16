@@ -28,8 +28,13 @@ install_ghost_dependencies () {
     # Set the instance name 
     INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
 
+    # Get the current instance's zone
+    ZONE=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/zone" -H "Metadata-Flavor: Google" | awk -F '/' '{print $4}')
+
     # Get the IP for the instance
-    INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+    # INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+    INSTANCE_IP=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip" -H "Metadata-Flavor: Google")
+
 
     # Retrieve MySQL Password from Google Secret Manager
     # Define the secret name
@@ -69,8 +74,6 @@ EOF
     sudo systemctl unset-environment MYSQLD_OPTS
     sudo systemctl revert mysql
     sudo killall -u mysql
-    # DEBUG ECHO
-    echo "Line 73 sudo systemctl restart mysql.service"
     sudo systemctl restart mysql.service
     
     # Configure MySQL as follows to avoid sudo mysql_secure_installation which is interactive and requires a user to enter details
@@ -145,14 +148,11 @@ get_valid_url() {
   while :; do
     # Prompt the user for a URL
     read -p "Enter the URL where you plan to host your Ghost blog (including http:// or https://): " url
-    # Echo the URL for debug purposes
-    echo "URL is: $url"
 
     # Check if the URL field is empty
     if [ -z "$url" ]; then
       # Prompt the user to use the instance's IP address
       read -p "You didn't enter a URL. Do you want to use the instance's IP address ($INSTANCE_IP)? [y/n]: " use_ip
-      echo "Use IP: $use_ip"
 
       # If user confirms, set the URL to the instance IP and break the loop
       if [ "$use_ip" = "y" ]; then
@@ -183,9 +183,10 @@ get_valid_url() {
 
 set_up_ghost () {
     # Install Ghost CLI
-    # DEBUG Install Ghost CLI
-    echo "Line 168 sudo npm install ghost-cli@latest -g"
-    sudo npm install ghost-cli@latest -g
+    # sudo npm install ghost-cli@latest -g
+    echo "Installing Ghost CLI" >> debug.log
+    sudo npm install ghost-cli@latest -g >> debug.log 2>&1
+
 
     #Make a new directory called ghost, set its permissions, then navigate to it:
     sudo mkdir -p /var/www/ghost
@@ -194,14 +195,14 @@ set_up_ghost () {
 
     # Prompt for the Ghost URL using the validate_url and get_valid_url functions
     # read -p "Enter the URL where you plan to host your Ghost blog including http:// or https://: " url
-    echo "Line 179 Getting valid Ghost URL..."
+    echo "Getting valid Ghost URL..." >> debug.log
     get_valid_url
 
     # Define the path to save the config.production.json file
     config_file_path="/var/www/ghost/config.production.json"
 
     # Create a config.production.json file with the Ghost URL and MySQL password set by variables
-    echo "Line 186 Creating config.production.json file..."
+    echo "Creating config.production.json file..." >> debug.log
     cat <<EOF > "$config_file_path"
     {
         "url": "$url",
@@ -221,7 +222,7 @@ set_up_ghost () {
     }
 EOF
 
-    echo "Config file saved to $config_file_path"
+    echo "Config file saved to $config_file_path" >> debug.log
 
     # Navigate to the website folder and install Ghost:
     cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
