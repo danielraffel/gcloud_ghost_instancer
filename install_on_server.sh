@@ -129,52 +129,57 @@ EOF
     # sed -i '/^\[client\]$/,/^\(user=root\|password=\)$/d' "$mysql_config_file"
 }
 
-# Function to validate a URL
+# Function to validate a given URL
 validate_url() {
-  if [[ $1 =~ ^https?://[a-zA-Z0-9.-]+$ ]]; then
-    return 0
-  else
-    return 1
-  fi
+  # If URL starts with 'http' or 'https', return 0 (success)
+  case "$1" in
+    http*://*) return 0;;
+    # Otherwise, return 1 (failure)
+    *) return 1;;
+  esac
 }
 
-# Function to get a valid URL or use the instance IP
+# Function to get a valid URL from the user
 get_valid_url() {
+  # Start an infinite loop until a valid URL is obtained
   while :; do
+    # Prompt the user for a URL
     read -p "Enter the URL where you plan to host your Ghost blog (including http:// or https://): " url
+    # Echo the URL for debug purposes
+    echo "URL is: $url"
 
-    # Condition 1 and 2: Check if the user entered a custom URL or wants to use the instance IP
+    # Check if the URL field is empty
     if [ -z "$url" ]; then
+      # Prompt the user to use the instance's IP address
       read -p "You didn't enter a URL. Do you want to use the instance's IP address ($INSTANCE_IP)? [y/n]: " use_ip
+      echo "Use IP: $use_ip"
 
-      # Condition 3: Continue with INSTANCE_IP if 'y'
-      if [ "$use_ip" == "y" ]; then
+      # If user confirms, set the URL to the instance IP and break the loop
+      if [ "$use_ip" = "y" ]; then
         url="http://$INSTANCE_IP"
         break
       fi
-
-      # Condition 4: Go back to the first question
+      # If the user doesn't confirm, loop back
       continue
     fi
 
-    # Condition 5: Check if the entered URL is valid
+    # Validate the entered URL
     if validate_url "$url"; then
-      # Condition 7: Confirm the URL
+      # Confirm the valid URL with the user
       read -p "You entered $url. Is this correct? [y/n]: " confirm
-      
-      # Condition 8: If the URL is valid, continue
-      if [ "$confirm" == "y" ]; then
+
+      # If the user confirms, break the loop
+      if [ "$confirm" = "y" ]; then
         break
       fi
     else
-      # Condition 6: Explain that the URL is invalid and why
+      # If the URL is invalid, show an error message and loop back
       echo "Invalid URL format. Make sure it starts with http:// or https:// and is a valid domain."
       continue
     fi
-    
-    # Condition 9 and 4: Go back to the first question
   done
 }
+
 
 set_up_ghost () {
     # Install Ghost CLI
@@ -183,8 +188,8 @@ set_up_ghost () {
     sudo npm install ghost-cli@latest -g
 
     #Make a new directory called ghost, set its permissions, then navigate to it:
-    sudo mkdir /var/www/ghost
-    sudo chown service_account:service_account /var/www/ghost
+    sudo mkdir -p /var/www/ghost
+    sudo chown service-account:service-account /var/www/ghost
     sudo chmod 775 /var/www/ghost
 
     # Prompt for the Ghost URL using the validate_url and get_valid_url functions
