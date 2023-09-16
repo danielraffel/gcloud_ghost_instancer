@@ -134,7 +134,7 @@ set_up_ghost() {
 
     # Navigate to the website folder and install Ghost:
     # cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
-    cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url http://$INSTANCE_IP:2368/ --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
+    cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url https://$INSTANCE_IP/ --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file
