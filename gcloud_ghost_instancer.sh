@@ -247,7 +247,7 @@ read -n 1 -s -r
 
 # Check if the firewall rule for sending email exists
 if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
-    echo "Firewall rule allow-outgoing-2525 already exists."
+    echo "\nFirewall rule allow-outgoing-2525 already exists."
 else
     # Create the firewall rule
     gcloud compute firewall-rules create allow-outgoing-2525 \
