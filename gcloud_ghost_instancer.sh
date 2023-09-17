@@ -220,6 +220,11 @@ create_and_add_ssh_keys() {
 
   # Clean up temporary file
   rm $temp_file
+
+  # Write setup variables to a file for use when resizing the instance in downgrade_instance
+  echo "INSTANCE_NAME=$INSTANCE_NAME" > temp_vars.sh
+  echo "ZONE=$ZONE" >> temp_vars.sh
+  echo "REGION=$REGION" >> temp_vars.sh
 }
 
 
@@ -232,6 +237,10 @@ create_and_add_ssh_keys() {
 #!/bin/bash
 
 create_instance () {
+# Explain that you're gonna be asked for your mysql password in a bit
+echo "When Ghost install runs you will be asked for this MySQL password so copy this now: $mysql_password"
+read -n 1 -s -r -p "Press any key to continue"
+
 # Check if the firewall rule for sending email exists
 if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
     echo "Firewall rule allow-outgoing-2525 already exists."
@@ -413,6 +422,10 @@ gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
 }
 
 downgrade_instance() {
+
+  # Source the variables from temp_vars.sh to complete the next few commands
+  source temp_vars.sh
+
   # stop the e2-medium instance
   gcloud compute instances stop $INSTANCE_NAME --zone=$ZONE
 
@@ -431,14 +444,28 @@ downgrade_instance() {
   # Get the static IP address
   STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
 
-  # Add the static IP address to Known Hosts file
-  ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
+  # Delete the temporary variables file
+  rm temp_vars.sh
 
   # SSH into the remote machine
   # ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP 'ghost ls; exit'
 
   # Share machine IP address
   color_text green "\nYour VM is running at: $STATIC_IP"
+
+  # Remove the host key for the instance from the local known_hosts file in case it was previously added
+  ssh-keygen -R 35.233.251.221
+
+  # Add the static IP address to Known Hosts file
+  ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
+
+  # SSH into the remote machine at the static address
+  ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$STATIC_IP << "ENDSSH"
+  # Open a screen session
+  screen -S ghost_install
+  cd /var/www/ghost
+  ghost ls
+ENDSSH
   
 }
 
