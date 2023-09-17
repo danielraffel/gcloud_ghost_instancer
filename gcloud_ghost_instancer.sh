@@ -339,14 +339,14 @@ ssh_instance () {
 
         ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
         # Open a screen session
-        screen -S ghost_install
+        # screen -S ghost_install
 
         # Download the installer script from GitHub
         curl -O https://raw.githubusercontent.com/danielraffel/gcloud_ghost_instancer/main/install_on_server.sh
 
         # Make it executable and run it
         chmod +x install_on_server.sh
-        ./install_on_server.sh
+        sh ./install_on_server.sh
 ENDSSH
 
       SSH_EXIT_CODE=$?
