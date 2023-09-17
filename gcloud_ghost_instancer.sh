@@ -344,6 +344,8 @@ ssh_instance () {
         # Download the installer script from GitHub
         curl -O https://raw.githubusercontent.com/danielraffel/gcloud_ghost_instancer/main/install_on_server.sh
 
+        curl -0 https://raw.githubusercontent.com/danielraffel/gcloud_ghost_instancer/main/ghost_install.sh
+
         # Make it executable and run it
         chmod +x install_on_server.sh
         sh ./install_on_server.sh
