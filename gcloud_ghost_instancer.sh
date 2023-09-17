@@ -412,25 +412,52 @@ gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
 
 }
 
-# Hardcoded IPs for testing and jumping into wait_and_ssh to see if it works without setting up lots of servers
+downgrade_instance() {
+  # stop the e2-medium instance
+  gcloud compute instances stop $INSTANCE_NAME --zone=$ZONE
+
+  # change the machine type from e2-medium to e2-micro
+  gcloud compute instances set-machine-type $INSTANCE_NAME --zone=$ZONE --machine-type=e2-micro
+
+  # start the e2-micro
+  gcloud compute instances start $INSTANCE_NAME --zone=$ZONE
+
+  # Create a Standard tier static IP address
+  gcloud compute addresses create $STATIC_IP_NAME --region=$REGION --network-tier=STANDARD
+
+  # Add the static IP address to the instance
+  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="External NAT" --address $STATIC_IP_NAME
+
+  # Get the static IP address
+  STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
+
+  # Add the static IP address to Known Hosts file
+  ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
+
+  # SSH into the remote machine
+  # ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP 'ghost ls; exit'
+
+  # Share machine IP address
+  color_text green "\nYour VM is running at: $STATIC_IP"
+  
+}
+
+# Optional debug function used during development.
+# Assumes you've run the script and setup a server with keys and want to access a hardcoded VM IP and jump directly into ssh_instance.
+# To run execute "sh gcloud_ghost_instancer.sh debug_vm" 
 debug_vm() {
-    INSTANCE_NAME="light-ghost"
+    INSTANCE_NAME="yourprefix-ghost"
     ZONE="us-west1-a"
 
   # Get the IP for the instance
   INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 
   # SSH into the remote machine
-  ssh -t -i ~/.ssh/gcp danielraffel@$INSTANCE_IP << "ENDSSH"
+  ssh -t -i ~/.ssh/gcp yourname@$INSTANCE_IP << "ENDSSH"
   journalctl -f
 ENDSSH
 }
 
-# Function to retrieve a stored password and set it for a user
-set_password_on_remote() {
-  password=$(gcloud secrets versions access latest --secret="root-password-$INSTANCE_NAME")
-  echo -e "$password\n$password" | sudo passwd root
-}
 
 # Main function that orchestrates script behavior
   main() {
@@ -438,7 +465,6 @@ set_password_on_remote() {
     if [ "$1" == "debug_vm" ]; then
       debug_vm
       setup_vm_instance
-      # install_ghost_dependencies
       exit 0
     fi
 
@@ -456,7 +482,7 @@ set_password_on_remote() {
     create_keys
     create_instance
     ssh_instance
-    # install_ghost_dependencies
+    downgrade_instance
 }
 
 main "$@"
