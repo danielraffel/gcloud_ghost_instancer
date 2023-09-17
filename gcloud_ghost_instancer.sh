@@ -467,6 +467,9 @@ downgrade_instance() {
   ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$STATIC_IP << "ENDSSH"
   # Open a screen session
   screen -S ghost_install
+  # Free up RAM by disabling snap on the micro-instance
+  sudo systemctl stop snapd.service
+  sudo systemctl disable snapd.service  
   cd /var/www/ghost
   ghost ls
 ENDSSH
