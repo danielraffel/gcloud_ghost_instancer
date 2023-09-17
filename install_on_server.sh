@@ -126,7 +126,8 @@ set_up_ghost() {
     sudo chmod 775 /var/www/ghost
 
     # Navigate to the website folder and install Ghost:
-    cd /var/www/ghost && ghost install
+    # cd /var/www/ghost && ghost install
+    cd /var/www/ghost && ghost install --setup-mysql --setup-nginx --setup-ssl --setup-systemd --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file

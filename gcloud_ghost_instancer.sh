@@ -240,10 +240,10 @@ create_instance () {
 # Retrieve the secret from Google Secret Manager
 mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
 
-# Explain that you're gonna be asked for your mysql password in a bit
-color_text red "Ghost install will ask for this MySQL password, copy it now:\n$mysql_password"
-color_text green "\n\nPress any key to continue"
-read -n 1 -s -r
+# # Explain that you're gonna be asked for your mysql password in a bit
+# color_text red "Ghost install will ask for this MySQL password, copy it now:\n$mysql_password"
+# color_text green "\n\nPress any key to continue"
+# read -n 1 -s -r
 
 # Check if the firewall rule for sending email exists
 if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
@@ -337,7 +337,7 @@ ssh_instance () {
 
 #       ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} -o IdentitiesOnly=yes service-account@$INSTANCE_IP
 
-        ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
+        ssh -tt -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
         # Open a screen session
         # screen -S ghost_install
 
