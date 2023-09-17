@@ -237,9 +237,13 @@ create_and_add_ssh_keys() {
 #!/bin/bash
 
 create_instance () {
+# Retrieve the secret from Google Secret Manager
+mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
+
 # Explain that you're gonna be asked for your mysql password in a bit
-echo "When Ghost install runs you will be asked for this MySQL password so copy this now: $mysql_password"
-read -n 1 -s -r -p "Press any key to continue"
+color_text yellow "When Ghost install runs you will be asked for this MySQL password so copy this now: $mysql_password"
+color_text green "Press any key to continue"
+read -n 1 -s -r
 
 # Check if the firewall rule for sending email exists
 if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
