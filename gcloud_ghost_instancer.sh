@@ -119,7 +119,7 @@ setup_url() {
     # Check if the URL starts with http:// or https://
     if [[ $url == http://* || $url == https://* ]]; then
       # Confirm the URL
-      read -p "You entered: $url. Is this URL correct? [Y/N]: " confirmation
+      read -p "You entered: $url. Is this URL correct? (y/n): " confirmation
 
       if [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
         continue
@@ -137,31 +137,27 @@ setup_url() {
 
 # Function to help setup Mailgun
 setup_mailgun() {
-  read -p "Do you want to setup Ghost to send emails using Mailgun? y/n: " setup_choice
+  read -p "Do you want to setup Ghost to send emails using Mailgun? (y/n): " setup_choice
 
   if [ "$setup_choice" = "n" ]; then
-    echo "The github repo explains how you can set up Mailgun in the future. Press any key for the script to continue."
-    read -n 1 -s
     return
   fi
 
-  read -p "Have you already set up your mailgun.com account? y/n: " account_choice
+  read -p "Have you already set up your mailgun.com account? (y/n): " account_choice
 
   if [ "$account_choice" = "n" ]; then
-    echo "The github repo explains how you can set up Mailgun in the future. Press any key for the script to continue."
-    read -n 1 -s
     return
   fi
 
   while true; do
     read -p "Enter your mailgun username: " mailgun_username
-    read -p "You entered: $mailgun_username. Is this correct? y/n: " username_confirm
+    read -p "You entered: $mailgun_username. Is this correct? (y/n): " username_confirm
     [ "$username_confirm" = "y" ] && break
   done
 
   while true; do
     read -p "Enter your mailgun password: " mailgun_password
-    read -p "You entered: $mailgun_password. Is this correct? y/n: " password_confirm
+    read -p "You entered: $mailgun_password. Is this correct? (y/n): " password_confirm
     [ "$password_confirm" = "y" ] && break
   done
 
@@ -181,24 +177,6 @@ setup_mailgun() {
   setup_mail="--mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_password --mailhost $smtp_mailgun --mailport 2525"
   echo "Ghost will be configured with these Mailgun SMTP settings:\n$setup_mail"
   
-}
-
-# Function to help setup custom ghost install parameters based on supplied URL and Mailgun settings
-custom_ghost_setup_parameters() {
-  local INSTANCE_NAME="$1"
-  local setup_url="$2"
-  local setup_mailgun="$3"
-  
-  # Initialize ghost_install_setup_parameters with setup_url
-  local ghost_install_setup_parameters="--url $setup_url"
-  
-  # Check if setup_mailgun exists and has content, if so append to ghost_install_setup_parameters
-  if [ -n "$setup_mailgun" ]; then
-    ghost_install_setup_parameters="$ghost_install_setup_parameters $setup_mailgun"
-  fi
-
-  # Save ghost_install_setup_parameters to gCloud secret
-  gcloud secrets create "ghost_install_setup_parameters-$INSTANCE_NAME" --data-file=<(echo -n "$ghost_install_setup_parameters") --replication-policy="automatic"
 }
 
 # Main function to validate and conform the instance name according to GCP rules.
@@ -284,44 +262,43 @@ prepare_instance_environment() {
   SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret="service-account-password-$INSTANCE_NAME" --project=$SECRET_PROJECT_ID)
 }
 
-
 # This function performs the following tasks:
 # 1. Creates SSH keys for the root and service-account users on a specified GCP instance.
 # 2. Retrieves these public keys and saves them into a temporary file.
 # 3. Uploads these public keys to the project metadata so that future instances can use them.
 # 4. Deletes the temporary file.
-create_and_add_ssh_keys() {
-  # Create SSH keys for root and service-account
-  gcloud compute ssh $instance_name --username=root
-  gcloud compute ssh $instance_name --username=service-account
+# create_and_add_ssh_keys() {
+#   # Create SSH keys for root and service-account
+#   gcloud compute ssh $instance_name --username=root
+#   gcloud compute ssh $instance_name --username=service-account
 
-  # Fetch public keys
-  root_key=$(cat $HOME/.ssh/google_compute_engine.pub)
-  # Checks if the $root_key string starts with "root:". If not (||), it prepends "root:" to the key.
-  [[ $root_key == root:* ]] || root_key="root:${root_key}"
+#   # Fetch public keys
+#   root_key=$(cat $HOME/.ssh/google_compute_engine.pub)
+#   # Checks if the $root_key string starts with "root:". If not (||), it prepends "root:" to the key.
+#   [[ $root_key == root:* ]] || root_key="root:${root_key}"
 
-  service_account_key=$(cat $HOME/.ssh/service_account.pub)
-  # Checks if the $service-account string starts with "service-account:". If not (||), it prepends "service-account:" to the key. 
-  [[ $service_account_key == service-account:* ]] || service_account_key="service-account:${service_account_key}"
+#   service_account_key=$(cat $HOME/.ssh/service_account.pub)
+#   # Checks if the $service-account string starts with "service-account:". If not (||), it prepends "service-account:" to the key. 
+#   [[ $service_account_key == service-account:* ]] || service_account_key="service-account:${service_account_key}"
 
-  # Concatenate keys into one string with usernames
-  all_keys="root:${root_key}\nservice-account:${service_account_key}"
+#   # Concatenate keys into one string with usernames
+#   all_keys="root:${root_key}\nservice-account:${service_account_key}"
 
-  # Save keys to a temporary file
-  temp_file="${HOME}/temp_keys.txt"
-  echo -e $all_keys > $temp_file
+#   # Save keys to a temporary file
+#   temp_file="${HOME}/temp_keys.txt"
+#   echo -e $all_keys > $temp_file
 
-  # Add public keys to the project metadata
-  gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$temp_file
+#   # Add public keys to the project metadata
+#   gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$temp_file
 
-  # Clean up temporary file
-  rm $temp_file
+#   # Clean up temporary file
+#   rm $temp_file
 
-  # Write setup variables to a file for use when resizing the instance in downgrade_instance
-  echo "INSTANCE_NAME=$INSTANCE_NAME" > $HOME/temp_vars.sh
-  echo "ZONE=$ZONE" >> $HOME/temp_vars.sh
-  echo "REGION=$REGION" >> $HOME/temp_vars.sh
-}
+#   # Write setup variables to a file for use when resizing the instance in downgrade_instance
+#   echo "INSTANCE_NAME=$INSTANCE_NAME" > $HOME/temp_vars.sh
+#   echo "ZONE=$ZONE" >> $HOME/temp_vars.sh
+#   echo "REGION=$REGION" >> $HOME/temp_vars.sh
+# }
 
 
 # Create a Google Cloud VM instance based on user input for zone and custom name.
@@ -433,7 +410,7 @@ ssh_instance () {
 
 #       ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} -o IdentitiesOnly=yes service-account@$INSTANCE_IP
 
-        ssh -tt -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
+        ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
         # Open a screen session
         screen -S ghost_install
 
@@ -498,6 +475,21 @@ generate_and_store_password() {
   # printf "%s" "$password" | gcloud secrets versions add "$secret_name" --data-file=-
 
   echo "Password generated and stored as $secret_name"
+}
+
+# Function to help setup custom ghost install parameters based on supplied URL and Mailgun (after instance name is defined)
+custom_ghost_setup_parameters() {
+  
+  # Initialize ghost_install_setup_parameters with url
+  local ghost_install_setup_parameters="--url $url"
+  
+  # Check if setup_mail exists and has content, if so append to ghost_install_setup_parameters
+  if [ -n "$setup_mail" ]; then
+    ghost_install_setup_parameters="$ghost_install_setup_parameters $setup_mail"
+  fi
+
+  # Save ghost_install_setup_parameters to gCloud secret
+  printf "%s" "$ghost_install_setup_parameters" | gcloud secrets create "ghost_install_setup_parameters-$INSTANCE_NAME" --data-file=-
 }
 
 create_keys () { 
@@ -606,12 +598,12 @@ ENDSSH
     get_region_from_zone
     setup_url
     setup_mailgun
-    custom_ghost_setup_parameters
     name_instance
     check_and_enable_secret_manager
     generate_and_store_password "root"
     generate_and_store_password "service-account"
     generate_and_store_password "mysql"
+    custom_ghost_setup_parameters
     create_keys
     create_instance
     ssh_instance
