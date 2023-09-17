@@ -346,7 +346,7 @@ ssh_instance () {
 
         # Make it executable and run it
         chmod +x install_on_server.sh
-        bash -i ./install_on_server.sh
+        sh ./install_on_server.sh
 ENDSSH
 
       SSH_EXIT_CODE=$?
