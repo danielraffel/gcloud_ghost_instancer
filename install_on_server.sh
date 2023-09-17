@@ -127,7 +127,17 @@ set_up_ghost() {
 
     # Navigate to the website folder and install Ghost:
     # cd /var/www/ghost && ghost install
-    cd /var/www/ghost && ghost install --setup-mysql --setup-nginx --setup-ssl --setup-systemd --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
+    # cd /var/www/ghost && ghost install --setup-mysql --setup-nginx --setup-ssl --setup-systemd --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
+    # Fetch the secret from gCloud and store it in a variable
+
+    # Navigate to the website folder:
+    cd /var/www/ghost
+
+    # Fetch the secret from gCloud and store it in a variable
+    ghost_install_setup_parameters=$(gcloud secrets versions access latest --secret="ghost_install_setup_parameters-$INSTANCE_NAME")
+
+    # Run ghost install with the fetched parameters
+    ghost install $ghost_install_setup_parameters
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file

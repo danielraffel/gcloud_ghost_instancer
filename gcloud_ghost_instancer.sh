@@ -105,6 +105,102 @@ get_region_from_zone() {
   REGION=$(echo $ZONE | sed 's/\(.*\)-.*/\1/')
 }
 
+# Function to validate URL
+setup_url() {
+  while true; do
+    read -p "Enter your blog URL (include http:// or https://): " url
+
+    # Check if URL is empty
+    if [[ -z "$url" ]]; then
+      echo "URL cannot be empty. Please try again."
+      continue
+    fi
+
+    # Check if the URL starts with http:// or https://
+    if [[ $url == http://* || $url == https://* ]]; then
+      # Confirm the URL
+      read -p "You entered: $url. Is this URL correct? [Y/N]: " confirmation
+
+      if [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
+        continue
+      elif [[ "$confirmation" == "Y" || "$confirmation" == "y" ]]; then
+        echo "Will setup Ghost with $url. Continuing..."
+        break
+      else
+        echo "Invalid choice. Please enter Y or N."
+      fi
+    else
+      echo "This is not a valid URL. Please enter a URL starting with http:// or https://."
+    fi
+  done
+}
+
+# Function to help setup Mailgun
+setup_mailgun() {
+  read -p "Do you want to setup Ghost to send emails using Mailgun? y/n: " setup_choice
+
+  if [ "$setup_choice" = "n" ]; then
+    echo "The github repo explains how you can set up Mailgun in the future. Press any key for the script to continue."
+    read -n 1 -s
+    return
+  fi
+
+  read -p "Have you already set up your mailgun.com account? y/n: " account_choice
+
+  if [ "$account_choice" = "n" ]; then
+    echo "The github repo explains how you can set up Mailgun in the future. Press any key for the script to continue."
+    read -n 1 -s
+    return
+  fi
+
+  while true; do
+    read -p "Enter your mailgun username: " mailgun_username
+    read -p "You entered: $mailgun_username. Is this correct? y/n: " username_confirm
+    [ "$username_confirm" = "y" ] && break
+  done
+
+  while true; do
+    read -p "Enter your mailgun password: " mailgun_password
+    read -p "You entered: $mailgun_password. Is this correct? y/n: " password_confirm
+    [ "$password_confirm" = "y" ] && break
+  done
+
+  while true; do
+    echo "Select which Mailgun SMTP host you're using:"
+    echo "1) smtp.mailgun.org (default)"
+    echo "2) smtp.eu.mailgun.org"
+    read -p "Pick by entering the number (1/2): " smtp_choice
+
+    case $smtp_choice in
+      1|"") smtp_mailgun="smtp.mailgun.org"; break;;
+      2) smtp_mailgun="smtp.eu.mailgun.org"; break;;
+      *) echo "Invalid choice. Please try again.";;
+    esac
+  done
+  
+  setup_mail="--mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_password --mailhost $smtp_mailgun --mailport 2525"
+  echo "Ghost will be configured with these Mailgun SMTP settings:\n$setup_mail"
+  
+}
+
+# Function to help setup custom ghost install parameters based on supplied URL and Mailgun settings
+custom_ghost_setup_parameters() {
+  local INSTANCE_NAME="$1"
+  local setup_url="$2"
+  local setup_mailgun="$3"
+  
+  # Initialize ghost_install_setup_parameters with setup_url
+  local ghost_install_setup_parameters="--url $setup_url"
+  
+  # Check if setup_mailgun exists and has content, if so append to ghost_install_setup_parameters
+  if [ -n "$setup_mailgun" ]; then
+    ghost_install_setup_parameters="$ghost_install_setup_parameters $setup_mailgun"
+  fi
+
+  # Save ghost_install_setup_parameters to gCloud secret
+  gcloud secrets create "ghost_install_setup_parameters-$INSTANCE_NAME" --data-file=<(echo -n "$ghost_install_setup_parameters") --replication-policy="automatic"
+}
+
 # Main function to validate and conform the instance name according to GCP rules.
 # Asks the user if they want to customize the VM name prefix using green-colored text.
 # Offers the default name 'ghost' if no customization is desired.
@@ -508,6 +604,9 @@ ENDSSH
     authenticate_and_fetch_project
     prompt_for_zone
     get_region_from_zone
+    setup_url
+    setup_mailgun
+    custom_ghost_setup_parameters
     name_instance
     check_and_enable_secret_manager
     generate_and_store_password "root"
