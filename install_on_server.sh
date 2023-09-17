@@ -129,8 +129,8 @@ set_up_ghost() {
     sudo chmod 775 /var/www/ghost
 
     # Set up ghostuser, give them sudo and change folder ownership:
-    sudo adduser ghostuser
-    sudo usermod -aG sudo ghostuser
+    sudo adduser ghost
+    sudo usermod -aG sudo ghost
     sudo chown -R ghost:ghost /var/www/ghost/content
 
     # Navigate to the website folder and install Ghost:
