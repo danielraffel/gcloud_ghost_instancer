@@ -134,10 +134,6 @@ set_up_ghost() {
     sudo chown -R ghost:ghost /var/www/ghost/content
 
     # Navigate to the website folder and install Ghost:
-    # cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --start
-    # cd /var/www/ghost && ghost install --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --url https://$INSTANCE_IP --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
-    # cd /var/www/ghost && ghost install --setup-mysql --setup-nginx --setup-ssl --setup-systemd --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
-    # cd /var/www/ghost && ghost install --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod
     cd /var/www/ghost && ghost install
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
