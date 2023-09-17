@@ -293,11 +293,6 @@ prepare_instance_environment() {
 
 #   # Clean up temporary file
 #   rm $temp_file
-
-#   # Write setup variables to a file for use when resizing the instance in downgrade_instance
-#   echo "INSTANCE_NAME=$INSTANCE_NAME" > $HOME/temp_vars.sh
-#   echo "ZONE=$ZONE" >> $HOME/temp_vars.sh
-#   echo "REGION=$REGION" >> $HOME/temp_vars.sh
 # }
 
 
@@ -511,6 +506,10 @@ gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
 --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
 --role="roles/secretmanager.secretAccessor"
 
+  # Write setup variables to a file for use when resizing the instance in downgrade_instance
+  echo "INSTANCE_NAME=$INSTANCE_NAME" > $HOME/temp_vars.sh
+  echo "ZONE=$ZONE" >> $HOME/temp_vars.sh
+  echo "REGION=$REGION" >> $HOME/temp_vars.sh
 }
 
 downgrade_instance() {
@@ -546,7 +545,7 @@ downgrade_instance() {
   color_text green "\nYour VM is running at: $STATIC_IP"
 
   # Remove the host key for the instance from the local known_hosts file in case it was previously added
-  ssh-keygen -R 35.233.251.221
+  ssh-keygen -R $STATIC_IP
 
   # Add the static IP address to Known Hosts file
   ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
