@@ -241,8 +241,8 @@ create_instance () {
 mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
 
 # Explain that you're gonna be asked for your mysql password in a bit
-color_text yellow "When Ghost install runs you will be asked for this MySQL password so copy this now: $mysql_password"
-color_text green "Press any key to continue"
+color_text red "Ghost install will ask for this MySQL password, copy it now:\n$mysql_password"
+color_text green "\n\nPress any key to continue"
 read -n 1 -s -r
 
 # Check if the firewall rule for sending email exists
