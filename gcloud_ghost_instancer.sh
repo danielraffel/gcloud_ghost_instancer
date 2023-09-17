@@ -222,9 +222,9 @@ create_and_add_ssh_keys() {
   rm $temp_file
 
   # Write setup variables to a file for use when resizing the instance in downgrade_instance
-  echo "INSTANCE_NAME=$INSTANCE_NAME" > temp_vars.sh
-  echo "ZONE=$ZONE" >> temp_vars.sh
-  echo "REGION=$REGION" >> temp_vars.sh
+  echo "INSTANCE_NAME=$INSTANCE_NAME" > $HOME/temp_vars.sh
+  echo "ZONE=$ZONE" >> $HOME/temp_vars.sh
+  echo "REGION=$REGION" >> $HOME/temp_vars.sh
 }
 
 
@@ -428,7 +428,7 @@ gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
 downgrade_instance() {
 
   # Source the variables from temp_vars.sh to complete the next few commands
-  source temp_vars.sh
+  source $HOME/temp_vars.sh
 
   # stop the e2-medium instance
   gcloud compute instances stop $INSTANCE_NAME --zone=$ZONE
@@ -449,7 +449,7 @@ downgrade_instance() {
   STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
 
   # Delete the temporary variables file
-  rm temp_vars.sh
+  rm $HOME/temp_vars.sh
 
   # SSH into the remote machine
   # ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP 'ghost ls; exit'
