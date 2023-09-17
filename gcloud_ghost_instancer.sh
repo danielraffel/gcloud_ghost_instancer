@@ -190,11 +190,11 @@ name_instance() {
   while true; do
     # Asks the user if they want to customize the VM name prefix.
     printf "\nThis script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)\n"
-    read -r -p "$(color_text green "\nDo you want to customize your prefix? (y/n):") " CUSTOMIZE
+    read -r -p "$(color_text green "\nDo you want to add a customize prefix to your VM? (y/n):") " CUSTOMIZE
 
     if [[ "$CUSTOMIZE" == "y" ]]; then
       # Prompts for a custom VM name prefix if customization is desired.
-      read -r -p "$(color_text green "\nCustomize your prefix (e.g. 'yourprefix-ghost'):") " CUSTOM_NAME
+      read -r -p "$(color_text green "\nCustomize the prefix for your VM (e.g. 'yourprefix-ghost'):") " CUSTOM_NAME
     else
       # Uses the default 'ghost' if no customization is desired.
       CUSTOM_NAME=""

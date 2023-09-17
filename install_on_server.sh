@@ -28,7 +28,7 @@ install_ghost_dependencies() {
     sudo systemctl set-environment MYSQLD_OPTS="--skip-networking --skip-grant-tables"
     sudo systemctl start mysql.service
 
-    # Set the instance name 
+    # Set the instance name
     INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
 
     # Get the current instance's zone
@@ -137,7 +137,7 @@ set_up_ghost() {
     ghost_install_setup_parameters=$(gcloud secrets versions access latest --secret="ghost_install_setup_parameters-$INSTANCE_NAME")
 
     # Run ghost install with the fetched parameters
-    ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
+    ghost install $ghost_install_setup_parameters --no-prompt --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1
 
     # For reasons I do not understand MySQL might error so this will try to address the issue
     # Create a new temporary SQL file
