@@ -7,7 +7,7 @@ Note: An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer
 **Requirements**
 
 * Google account
-* gcloud CLI installed (if not pre-installed the script will assist installing it for you)
+* [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed (if not pre-installed the script will assist installing it for you)
 * MacOS
 
 **Usage**
