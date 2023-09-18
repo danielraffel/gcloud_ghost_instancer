@@ -526,14 +526,26 @@ downgrade_instance() {
   # start the e2-micro
   gcloud compute instances start $INSTANCE_NAME --zone=$ZONE
 
+  # # Create a Standard tier static IP address
+  # gcloud compute addresses create $STATIC_IP_NAME --region=$REGION --network-tier=STANDARD
+
+  # # Add the static IP address to the instance
+  # gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="External NAT" --address $STATIC_IP_NAME
+
+  # # Get the static IP address
+  # STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
+
+  # Assign a name to the static IP
+  STATIC_IP_NAME="$INSTANCE_NAME-ip"
+
   # Create a Standard tier static IP address
   gcloud compute addresses create $STATIC_IP_NAME --region=$REGION --network-tier=STANDARD
 
-  # Add the static IP address to the instance
-  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="External NAT" --address $STATIC_IP_NAME
-
   # Get the static IP address
   STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
+
+  # Add the static IP address to the instance
+  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="External NAT" --address $STATIC_IP
 
   # Delete the temporary variables file
   rm $HOME/temp_vars.sh
@@ -542,7 +554,7 @@ downgrade_instance() {
   # ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP 'ghost ls; exit'
 
   # Share machine IP address
-  color_text green "\nYour VM is running at: $STATIC_IP"
+  color_text green "\nYour VM is now running at: $STATIC_IP"
 
   # Remove the host key for the instance from the local known_hosts file in case it was previously added
   ssh-keygen -R $STATIC_IP
