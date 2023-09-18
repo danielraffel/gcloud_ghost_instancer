@@ -1,69 +1,102 @@
-**[Blog Post](https://danielraffel.me/2023/09/18/learning-about-google-cloud-by-developing-a-ghost-org-installer/) about this project**
+# [Blog Post](https://danielraffel.me/2023/09/18/learning-about-google-cloud-by-developing-a-ghost-org-installer/) covering additional details about this project
 
-**About**
+**About This Project**
 
-Automate the setup of a Google Compute Engine E2-Micro VM running [Ghost.org](Ghost.org) on macOS. Setup starts on a premium E2-Medium VM due to server load. And, ends with an Always Free tier VM running on an E2-Micro. Minimal setup costs, likely cents.
+This script aims to facilliate setting up a self-hosted [Ghost.org](Ghost.org) instance on Google Cloud without a lot of hassle. I recently embarked on learning more about Google's Cloud and decided to automate this process, using the Google Cloud Command Line Interface (CLI) and various Google services. Google Cloud has a free-tier E2-Micro instance server ideal for running low traffic websites or blogs. I figured why not make it accessible to more people?
 
-Note: An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs running it, subject to Google's terms and usage limits. 
+While attempting to run this installer on an E2-Micro (1GB) instance, I encountered frequent timeouts and maxed-out memory. Even upgrading to an E2-Small (2GB) didn't solve the issue. Ultimately, I opted for an E2-Medium (4GB) instance to ensure stability for setup. And, downgraded to an E2-Micro post setup. This incurs a nominal one-time cost
+
+At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under [Google Cloud's Always Free Tier]([url](https://cloud.google.com/free/docs/free-cloud-features)), which means you won't incur any costs running it, subject to Google's terms and usage limits. 
 
 **Requirements**
 
 * Google account
 * [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed (if not pre-installed the script will assist installing it for you)
-* MacOS
+* macOS
+* While the setup flow supports setting up [Mailgun.com](Mailgun.com) to send emails you'll need to have previously registered a username/password
 
 **Usage**
 
 ```
 git clone git@github.com:danielraffel/gcloud_ghost_instancer.git
 cd repo-directory
-sh delete.secrets.sh
+sh gcloud_ghost_instancer.sh
 ```
 
 **Instructions**
 
-Follow on-screen prompts for customization. These include free VM creation, automatically downloading the gcloud CLI, and more.
+Follow on-screen prompts for customization. These include free VM creation, automatically downloading the gcloud CLI, and more. I walk through them below in Post Setup Screen Action Items.
 
 **Troubleshooting**
 
-File issues for problems. Known issues:
+File issues for problems.
 
 **Security & Secrets**
 
-* Generates SSH keys stored at $HOME/.ssh/
-* Passwords and setup params stored in Google Secret Manager
+* Generates local SSH keys stored at `$HOME/.ssh/` for
+   * **root** `root_key-YOUR.INSTANCE.NAME-ghost`
+   * **service-account** `service_account_key-YOUR.INSTANCE.NAME-ghost`
+* Passwords and setup params stored in [Google Secret Manager](https://cloud.google.com/secret-manager/). They are labeled as follows:
+   * **mysql root password** `mysql-password-YOUR.INSTANCE.NAME-ghost`
+   * **service-account** `service-account-password-YOUR.INSTANCE.NAME-ghost`
+   * **root** `root-password-YOUR.INSTANCE.NAME-ghost`
+* The script `gcloud_ghost_instancer.sh` asks how you want to customize your Ghost install. The parameters you define during setup are stored in `ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost` in [Google Secret Manager](https://cloud.google.com/secret-manager/) and appended to the Ghost installer on your VM at runtime as follows. This is a complate list of the parameters that are passed:
+   * `ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1`
+* The content of `ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost` will:
+   * **Always** include the URL where you will host Ghost
+      *  `--url $url`
+   * **Optionally** include Mailgun settings if you opt to set that up and enter your `mailgun_username` and `mailgun_username`
+      * `--mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_username --mailhost $smtp_mailgun --mailport 2525`
+* Post-setup to SSH into your machine to do things like edit your config.production.json file and more go to your terminal and run:
+   * `ssh -i $HOME/.ssh/service_account_key-INSTANCE_NAME-ghost -o IdentitiesOnly=yes service-account@INSTANCE_IP`
+      * Note: You will need to update your instance Name and External IP
+      * You can obtain these details under "Name" and "External IP" in the [GCP Console](https://console.cloud.google.com/compute/instances)
+      * Or, you can run a gcloud command to fetch them in the terminal
+```
+gcloud compute instances list --format="table(name, networkInterfaces[0].accessConfigs[0].natIP)"
+```
 
 **Cleanup**
 
-It's possible the script may fail, leaving a partial VM. Check [GCP Console](https://console.cloud.google.com/compute/instances) to ensure you end up with an E2-Micro.
+It's entirely possible the script may fail, leaving you with a running VM. While I do not expect that to occur I advise you to check [GCP Console](https://console.cloud.google.com/compute/instances) to ensure you end up with an E2-Micro. You can also run this gCloud command after the script runs to see what's running.
+
+```
+gcloud compute instances list
+```
+
+A temp file is generated on your local machine to store variables the script needs access to after exiting the SSH session. You can search the code to see what is stored. On your local machine the script `gcloud_ghost_instancer.sh` creates and removes this file:
+```
+$HOME/temp_vars.sh
+```
+Temp files are created on your VM to generate some SQL commands that run to optimize your DB without opening the mysql prompt. The script `install_on_server.sh` creates and removes these files:
+```
+sql_file
+sql_file2
+```
 
 **Known Issues**
 
-* Installer not optimized to be installed on a free-tier E2-Micro
-* Errors during Ghost installation (still functional and likely due to running in a pseudo terminal eg not legit issues)
-* Not tested on Linux/Windows
-* Not tested on Linux / Windows. Will need support for checking/installing the Google Cloud CLI.
-* SSL was setup but with a no-prompt installer. I'm accustomed to a few extra steps with Lets Encrypt, needs investigation.
+* Installer is not optimized to be installed on a free-tier E2-Micro
+* Ghost installation presents a few errors but is still functional. This is likely due to the installer running in a pseudo terminal and as far as I know are not actual issues.
+* Not tested on Linux / Windows. To run this on platforms you will need the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install). The script checks and installs this for macOS but doesn't do that for other platforms.
+* SSL was setup with a no-prompt installer. And, this may only supports https. I don't know that for certain so for now the script doesn't currently block setting up http Blog URLs.
+   * I'm accustomed to a few extra steps setting up Lets Encrypt. One day I might run this with a new domain and write the final setup steps for hosting DNS via SSL. If you beat me to that please share!
+* I have not personally tested end-to-end Mailgun setup with these flows (but it likely works since it leans on the script just collecting parameters and passing them to Ghost installer to generate the config correctly.) 
 
 **Additional Information**
 
 * This script is provided for informational purposes only. It is not officially supported by me or Google Cloud.
 * The script likely contain bugs. Please use it at your own risk.
-* The script creates SSH keys on your local machine (and uploads the public key to your VM) so that you can access the server without a password. The keys for the users created on your VM are located in $HOME/.ssh/ for root (root_key-YOUR.INSTANCE.NAME-ghost) and service-account (service_account_key-YOUR.INSTANCE.NAME-ghost)
-* The VM sets a root password, creates a service-account user and password and creates a mysql password. 
-* All passwords created by the script are stored in Google Secret Manager associated with your account. You can find your mysql root password (mysql-password-YOUR.INSTANCE.NAME-ghost), service-account (service-account-password-YOUR.INSTANCE.NAME-ghost) and root (root-password-YOUR.INSTANCE.NAME-ghost).
-* The installer asks how you want to customize Ghost install. The parameters you define are also stored in Google Secret Manager since it's a handy synced datastore. You can find what your ghost was configured with at: ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost.
 * Learn about [Google Secret Manager](https://cloud.google.com/secret-manager/)
-* The setup flow supports setting up [Mailgun.com](Mailgun.com) to send emails but you'll need to have already registered a username/password. I have not tested it (but likely works.)
 * There are some Post Setup Action Items that will be required such as configuring your Ghost install with your DNS.
 
 **Post Setup Action Items**
 
 DNS configuration! You'll need to configure your Ghost instance to work with your DNS. This is currently outside of the scope of this installer and read me.
 
-For now, I'd advise following [Scott's setup guide](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/):
-- Step 2: Configuring your Domain
-- Step 5: Finish Cloudflare configuration on this excellent setup site
+* For now, I'd advise following [Scott's setup guide](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/):
+   * Step 2: Configuring your Domain
+   * Step 5: Finish Cloudflare configuration on this excellent setup site
 
 **Potential Future Enhancements**
 
@@ -106,13 +139,13 @@ Step 7) Creates SSH keys for root VM user on your local machine @ $HOME/.ssh/roo
 Enter passphrase (empty for no passphrase):
 Enter same passphrase again:
 
-Assuming all runs smoothly the rest of the installer is automated. It should end with
+Assuming all runs smoothly the rest of the installer is automated. It should end with these things being installed
 
 ```
 Blog URL: https://ketchup.com
 MySQL hostname: localhost
 MySQL username: root
-MySQL password: <accessible in Google Secret>
+MySQL password: <mysql-password-YOUR.INSTANCE.NAME-ghost -- accessible in Google Secret Manager>
 Ghost database name: ghost_prod
 Set up Ghost MySQL user? — Y
 Set up NGINX? — Y
@@ -121,10 +154,4 @@ Set up systemd? — Y
 Start Ghost? — Y
 ```
 
-At the very end you'll be briefly SSH'd into your Micro-Instance and should see the status of your server.
-
-In the future, to ssh into your machine to do things like edit your config.production.json file and more go to your terminal and run:
-```
-ssh -t -i $HOME/.ssh/service_account_key-ketchup-ghost -o IdentitiesOnly=yes service-account@YourInstanceIP
-```
-Note: You will need to update YourInstanceIP with your external IP for your instance from [GCP Console](https://console.cloud.google.com/compute/instances)
+At the very end you'll be briefly SSH'd into your E2-Micro instance where you'll see the status of your server. Then, the script ends and the SSH session exits.
