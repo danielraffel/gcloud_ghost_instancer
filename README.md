@@ -123,3 +123,9 @@ To ssh into your machine to do things like edit your config.production.json file
 ssh -t -i $HOME/.ssh/service_account_key-ketchup-ghost -o IdentitiesOnly=yes service-account@YourInstanceIP
 
 Note: You will need to update YourInstanceIP with your external IP for your instance from [https://console.cloud.google.com/compute/instances]
+
+**Post Setup Action Items**
+
+DNS configuration! You'll need to configure your Ghost instance to work with your DNS. This is currently outside of the scope of this installer and read me.
+
+For now, I'd advise following Step 2 Configuring your Domain and Step 5 Finish Cloudflare configuration on this excellent setup site: https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/
