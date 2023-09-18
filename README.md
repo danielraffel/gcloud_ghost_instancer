@@ -15,9 +15,9 @@ Note: An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer
 **Usage**
 
 ```
-git clone repo-url
+git clone git@github.com:danielraffel/gcloud_ghost_instancer.git
 cd repo-directory
-sh gcloud_ghost_instancer.sh
+sh delete.secrets.sh
 ```
 
 **Instructions**
