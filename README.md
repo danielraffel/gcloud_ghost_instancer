@@ -46,16 +46,14 @@ ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setu
 ```
 * The content of `ghost_install_setup_parameters` will:
    * **Always** include the URL where you will host Ghost
-```
---url $url
-```
+`--url $url`
    * **Optionally** include Mailgun settings if you opt to share your `mailgun_username` and `mailgun_username` with the installer:
 ```
 --mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_username --mailhost $smtp_mailgun --mailport 2525
 ```
 * Post-setup to SSH into your machine to do things like edit your config.production.json file and more go to your terminal and run:
 ```
-ssh -i $HOME/.ssh/service_account_key-INSTANCE_NAME-ghost -o IdentitiesOnly=yes service-account@INSTANCE_IP
+ssh -i $HOME/.ssh/service_account_key-INSTANCE_NAME -o IdentitiesOnly=yes service-account@INSTANCE_IP
 ```
 * Note: You will need to update your instance Name and External IP
    * You can obtain these details under "Name" and "External IP" in the [GCP Console](https://console.cloud.google.com/compute/instances)
