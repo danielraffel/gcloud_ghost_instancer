@@ -41,17 +41,25 @@ Follow on-screen prompts for customization. These include free VM creation, auto
    * **service-account** `service-account-password-YOUR.INSTANCE.NAME-ghost`
    * **root** `root-password-YOUR.INSTANCE.NAME-ghost`
 * The script `gcloud_ghost_instancer.sh` asks how you want to customize your Ghost install. The parameters you define during setup are stored in `ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost` in [Google Secret Manager](https://cloud.google.com/secret-manager/) and appended to the Ghost installer on your VM at runtime as follows. This is a complate list of the parameters that are passed:
-   * `ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1`
-* The content of `ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost` will:
+```
+ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1
+```
+* The content of `ghost_install_setup_parameters` will:
    * **Always** include the URL where you will host Ghost
-      *  `--url $url`
-   * **Optionally** include Mailgun settings if you opt to set that up and enter your `mailgun_username` and `mailgun_username`
-      * `--mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_username --mailhost $smtp_mailgun --mailport 2525`
+```
+--url $url
+```
+   * **Optionally** include Mailgun settings if you opt to share your `mailgun_username` and `mailgun_username` with the installer:
+```
+--mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_username --mailhost $smtp_mailgun --mailport 2525
+```
 * Post-setup to SSH into your machine to do things like edit your config.production.json file and more go to your terminal and run:
-   * `ssh -i $HOME/.ssh/service_account_key-INSTANCE_NAME-ghost -o IdentitiesOnly=yes service-account@INSTANCE_IP`
-      * Note: You will need to update your instance Name and External IP
-      * You can obtain these details under "Name" and "External IP" in the [GCP Console](https://console.cloud.google.com/compute/instances)
-      * Or, you can run a gcloud command to fetch them in the terminal
+```
+ssh -i $HOME/.ssh/service_account_key-INSTANCE_NAME-ghost -o IdentitiesOnly=yes service-account@INSTANCE_IP
+```
+* Note: You will need to update your instance Name and External IP
+   * You can obtain these details under "Name" and "External IP" in the [GCP Console](https://console.cloud.google.com/compute/instances)
+* Or, you can run a gcloud command to fetch them in the terminal
 ```
 gcloud compute instances list --format="table(name, networkInterfaces[0].accessConfigs[0].natIP)"
 ```
