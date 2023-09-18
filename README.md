@@ -110,16 +110,9 @@ Set up SSL? — Y
 Set up systemd? — Y
 Start Ghost? — Y
 
-At the very end you'll be briefly SSH'd into your Micro-Instance and should see this:
+At the very end you'll be briefly SSH'd into your Micro-Instance and should see the status of your server.
 
-┌─────────────┬────────────────┬─────────┬──────────────────────┬─────────────────────┬──────┬─────────────────┐
-│ Name        │ Location       │ Version │ Status               │ URL                 │ Port │ Process Manager │
-├─────────────┼────────────────┼─────────┼──────────────────────┼─────────────────────┼──────┼─────────────────┤
-│ ketchup-com │ /var/www/ghost │ 5.63.0  │ running (production) │ http://ketchup.com  │ 2368 │ systemd         │
-└─────────────┴────────────────┴─────────┴──────────────────────┴─────────────────────┴──────┴─────────────────┘
-
-
-To ssh into your machine to do things like edit your config.production.json file and more go to your terminal an run...
+In the future, to ssh into your machine to do things like edit your config.production.json file and more go to your terminal and run...
 ssh -t -i $HOME/.ssh/service_account_key-ketchup-ghost -o IdentitiesOnly=yes service-account@YourInstanceIP
 
 Note: You will need to update YourInstanceIP with your external IP for your instance from [https://console.cloud.google.com/compute/instances]
