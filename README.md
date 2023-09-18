@@ -1,8 +1,8 @@
-*README.md for gcloud_ghost_instancer.sh*
-
 **About**
 
-This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with [Ghost.org](Ghost.org) installed. An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs running it, subject to Google's terms and usage limits. While it's possible to run Ghost on an E2-Micro automating the software install seems to tax the machine. Therefore, this script installs the software on an E2-Medium server, immediately stops it once complete and then re-starts the server as an E2-Micro. I presume this will incure some cost. If I had to guess I'm thinking it would be measured in cents?
+Automate the setup of a Google Compute Engine E2-Micro VM running [Ghost.org](Ghost.org). Switches from an E2-Medium to E2-Micro post-install to handle installation load. Minimal setup costs, likely cents.
+
+Note: An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs running it, subject to Google's terms and usage limits. 
 
 **Requirements**
 
@@ -12,54 +12,61 @@ This script will help you set up and run a Google Compute Engine E2-Micro virtua
 
 **Usage**
 
-Clone the repo, open a terminal and navigate to the directory containing the scripts. Then, run the following command:
-
 ```
+git clone repo-url
+cd repo-directory
 sh gcloud_ghost_instancer.sh
 ```
 
 **Instructions**
 
-The script will prompt you for the following information, such as:
-
-* Do you want to proceed with creating a free Virtual Machine on Google Cloud?
-* Do you want to automatically download and install the gcloud CLI? (pre-requisite)
-* etc...
-
-Once you have provided all of the necessary information, the script will create the VM and install Ghost.org. You will then be provided with details of your VM and instructions on how to access the Ghost admin panel.
+Follow on-screen prompts for customization. These include free VM creation, automatically downloading the gcloud CLI, and more.
 
 **Troubleshooting**
 
-* If you encounter any problems, file issues. And, feel free to share any feedback or suggestions.
+File issues for problems. Known issues:
+
+**Security & Secrets**
+
+* Generates SSH keys stored at $HOME/.ssh/
+* Passwords and setup params stored in Google Secret Manager
+
+**Cleanup**
+
+It's possible the script may fail, leaving a partial VM. Check [GCP Console](https://console.cloud.google.com/compute/instances) to ensure you end up with an E2-Micro.
 
 **Known Issues**
 
-* The installer hasn't been optimized to be installed on a free-tier E2-Micro
-* The installer has not been tested on Linux / Windows. At the very least it will definitely need support for checking/installing the Google Cloud CLI.
-* After ghost installs it gives three bad looking errors. I dunno why because it works just fine. I suspect this is due to running in a pseudo terminal during setup. 
-* The first error is: CliError. Message: Error trying to connect to the MySQL database. <-- it is setup fine
-* The second error is: SystemError Message: Prompts have been disabled, all options must be provided via command line flags. <-- yep, we setup with prompts
-* The third error is: GhostError Message: Ghost was able to start, but errored during boot with: Access denied for user 'root'@'localhost'
-* I am unclear how SSL works when setup with no-prompt. It was installed by the installer but I'm accustomed to a few extra steps with Lets Encrypt.
+* Installer not optimized to be installed on a free-tier E2-Micro
+* Errors during Ghost installation (still functional and likely due to running in a pseudo terminal eg not legit issues)
+* Not tested on Linux/Windows
+* Not tested on Linux / Windows. Will need support for checking/installing the Google Cloud CLI.
+* SSL was setup but with a no-prompt installer. I'm accustomed to a few extra steps with Lets Encrypt, needs investigation.
 
 **Additional Information**
 
 * This script is provided for informational purposes only. It is not officially supported by me or Google Cloud.
-* The script is likely contain bugs. Please use it at your own risk.
+* The script likely contain bugs. Please use it at your own risk.
 * The script creates SSH keys on your local machine (and uploads the public key to your VM) so that you can access the server without a password. The keys for the users created on your VM are located in $HOME/.ssh/ for root (root_key-YOUR.INSTANCE.NAME-ghost) and service-account (service_account_key-YOUR.INSTANCE.NAME-ghost)
 * The VM sets a root password, creates a service-account user and password and creates a mysql password. 
 * All passwords created by the script are stored in Google Secret Manager associated with your account. You can find your mysql root password (mysql-password-YOUR.INSTANCE.NAME-ghost), service-account (service-account-password-YOUR.INSTANCE.NAME-ghost) and root (root-password-YOUR.INSTANCE.NAME-ghost).
 * The installer asks how you want to customize Ghost install. The parameters you define are also stored in Google Secret Manager since it's a handy synced datastore. You can find what your ghost was configured with at: ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost.
-* You can find more information about Google Secret Manager here: [https://cloud.google.com/secret-manager/].
-* You can access your VM in the Google Cloud Console here: [https://console.cloud.google.com/compute/instances].
-* The setup flow supports setting up Mailgun.com to send emails but you'll need to have already registered a username/password. I have not tested it (likely works.)
-* If the script fails it is possible you'll end up with a partially running VM. Since it could theoretically fail when installing on a premium VM I would check the Google Cloud Console after each run and click on the instance to confirm you got an E2-Micro: [https://console.cloud.google.com/compute/instances]
-* There are some post-run setup flows that will be required such as configuring your Ghost install with your DNS.
+* Learn about [Google Secret Manager](https://cloud.google.com/secret-manager/)
+* The setup flow supports setting up [Mailgun.com](Mailgun.com) to send emails but you'll need to have already registered a username/password. I have not tested it (but likely works.)
+* There are some Post Setup Action Items that will be required such as configuring your Ghost install with your DNS.
+
+**Post Setup Action Items**
+
+DNS configuration! You'll need to configure your Ghost instance to work with your DNS. This is currently outside of the scope of this installer and read me.
+
+For now, I'd advise following [Scott's setup guide](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/):
+- Step 2: Configuring your Domain
+- Step 5: Finish Cloudflare configuration on this excellent setup site
 
 **Potential Future Enhancements**
 
-* Adding details when the script ends with personalized details about what was installed.
-* Exploring more ways to customize the google cloud install options.
+* Automate DNS and SSL setup.
+* Explore ways to customize additional install options.
 
 **Setup Screen Action Items**
 
@@ -119,9 +126,3 @@ In the future, to ssh into your machine to do things like edit your config.produ
 ssh -t -i $HOME/.ssh/service_account_key-ketchup-ghost -o IdentitiesOnly=yes service-account@YourInstanceIP
 ```
 Note: You will need to update YourInstanceIP with your external IP for your instance from [https://console.cloud.google.com/compute/instances]
-
-**Post Setup Action Items**
-
-DNS configuration! You'll need to configure your Ghost instance to work with your DNS. This is currently outside of the scope of this installer and read me.
-
-For now, I'd advise following Step 2 Configuring your Domain and Step 5 Finish Cloudflare configuration on this excellent setup site: https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/
