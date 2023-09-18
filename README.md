@@ -104,42 +104,46 @@ DNS configuration! You'll need to configure your Ghost instance to work with you
 * Explore ways to customize additional install options.
 
 **Setup Screen Action Items**
+Below are the steps you'll be walked through in the script.
 
-Step 1) This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with Ghost.org installed.
+**Step 1)** This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with Ghost.org installed.
 
 An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs, subject to Google's terms and usage limits.
 Learn more: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits
 
-Do you want to proceed? (y/n): y
+_Do you want to proceed? (y/n): y_
 
-Step 2) To create a free E2-Micro instance, you'll need to setup your VM in a colocation facility that supports free-tiers.
+**Step 2)** To create a free E2-Micro instance, you'll need to setup your VM in a colocation facility that supports free-tiers. Pick the one closest to you.
 
  1) Oregon: us-west1
  2) Iowa: us-central1
  3) South Carolina: us-east1
 
-Select a zone that sounds like it's located closest to you: 1
+_Select a zone that sounds like it's located closest to you: 1_
 
-Step 3) Enter your blog URL (include http:// or https://):  https://ketchup.com
-You entered: https://ketchup.com. Is this URL correct? (y/n): y
-Will setup Ghost with https://ketchup.com. Continuing...
+**Step 3)** Enter your blog URL (include http:// or https://):  https://ketchup.com
+* _You entered: https://ketchup.com. Is this URL correct? (y/n): y_
+* Will setup Ghost with https://ketchup.com. Continuing...
 
-Step 4) Do you want to setup Ghost to send emails using Mailgun? (y/n):(if you select yes you'll need to have your mailgun username and password handy)
+**Step 4)** Do you want to setup Ghost to send emails using Mailgun? (y/n):
+* Note: if you select yes you'll need to have your mailgun username and password handy
 
-Step 5) This script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)
-Do you want to add a customize prefix to your VM? (y/n): y
-Customize the prefix for your VM (e.g. 'yourprefix-ghost'):: ketchup
-Your VM will be named: ketchup-ghost
+**Step 5)** This script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)
+* _Do you want to add a customize prefix to your VM? (y/n): y_
+* _Customize the prefix for your VM (e.g. 'yourprefix-ghost'):: ketchup_
+* Your VM will be named: ketchup-ghost
 
-Step 6) Creates SSH keys for service-account VM user on your local machine @ $HOME/.ssh/service_account_key-ketchup-ghost -- you'll be asked to simply press return
-Enter passphrase (empty for no passphrase):
-Enter same passphrase again:
+**Step 6)** Creates SSH keys for service-account VM user on your local machine @ `$HOME/.ssh/service_account_key-ketchup-ghost`
+* _Note: you'll be asked to simply press return (no need to enter a password)_
+   * Enter passphrase (empty for no passphrase):
+   * Enter same passphrase again:
 
-Step 7) Creates SSH keys for root VM user on your local machine @ $HOME/.ssh/root_key-ketchup-ghost -- (you'll be asked to simply press return)
-Enter passphrase (empty for no passphrase):
-Enter same passphrase again:
+**Step 7)** Creates SSH keys for root VM user on your local machine @ `$HOME/.ssh/root_key-ketchup-ghost`
+* _Note: similar to step 6 you'll be asked to simply press return (no need to enter a password)_
+   * Enter passphrase (empty for no passphrase):
+   * Enter same passphrase again:
 
-Assuming all runs smoothly the rest of the installer is automated. It should end with these things being installed
+**Last Bits** Assuming all runs smoothly the rest of the installer is automated. It should end with these things being installed
 
 ```
 Blog URL: https://ketchup.com
@@ -154,4 +158,6 @@ Set up systemd? — Y
 Start Ghost? — Y
 ```
 
-At the very end you'll be briefly SSH'd into your E2-Micro instance where you'll see the status of your server. Then, the script ends and the SSH session exits.
+**At the very end** 
+* You'll be briefly SSH'd into your E2-Micro instance where you'll see the status of your server.
+* The script completes and the SSH session exits.
