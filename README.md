@@ -1,6 +1,6 @@
 **About**
 
-Automate the setup of a Google Compute Engine E2-Micro VM running [Ghost.org](Ghost.org). Switches from an E2-Medium to E2-Micro post-install to handle installation load. Minimal setup costs, likely cents.
+Automate the setup of a Google Compute Engine E2-Micro VM running [Ghost.org](Ghost.org) on macOS. Setup starts on a premium E2-Medium VM due to server load. And, ends with an Always Free tier VM running on an E2-Micro. Minimal setup costs, likely cents.
 
 Note: An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs running it, subject to Google's terms and usage limits. 
 
