@@ -14,21 +14,17 @@ color_text() {
 # Initial setup prompt
 # For more information about Google Cloud Free Tier micro instances, visit: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits
 initial_prompt() {
-  # Print the initial message
   printf "This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with Ghost.org installed.\n\nAn E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs, subject to Google's terms and usage limits.\nLearn more: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits\n"
-
-  # Ask the user to proceed
   color_text green "\nDo you want to proceed? (y/n): "
   read -r setup_instance
 
-  # If the user says no, exit the script
   if [ "$setup_instance" != "y" ]; then
     echo "No worries. Have a great day!"
     exit 0
   fi
 }
 
-# Check for gcloud CLI and install if not found. Installation proceeds without user interaction
+# Check for gcloud CLI and install if not found. Installation proceeds without user interaction if found.
 # For more information about Google Cloud SDK, visit: https://cloud.google.com/sdk/docs
 check_gcloud_install() {
   if ! command -v gcloud &> /dev/null; then
@@ -56,7 +52,9 @@ check_gcloud_install() {
   fi
 }
 
-# Check for gcloud in bashrc and zshrc
+# Function to check if gCloud is set up in either .bashrc or .zshrc
+# If not found, it adds an alias for 'll' to run 'ls -l' in both shell configuration files
+# After updating the files, it reloads the corresponding shell configuration
 check_shell_setup() {
   if grep -q 'gcloud' ~/.bashrc || grep -q 'gcloud' ~/.zshrc; then
     :
@@ -68,7 +66,11 @@ check_shell_setup() {
   fi
 }
 
-# Use gcloud CLI to discover if the user has a project set up, and if not, authenticate and fetch it
+# Function to authenticate the user and fetch the Google Cloud Platform project ID
+# Checks if a GCP project is already set in the gcloud config
+# If not, it initiates gcloud authentication
+# Upon successful authentication, it fetches the newly set project ID
+# Exits the script if authentication fails or no project is selected
 authenticate_and_fetch_project() {
   PROJECT_ID=$(gcloud config get-value project 2> /dev/null)
   if [[ -z "$PROJECT_ID" ]]; then
@@ -82,7 +84,9 @@ authenticate_and_fetch_project() {
   fi
 }
 
-# Prompt for zone where the user will setup their google VM instance and only show free zones
+# Function to prompt the user to select a Google Cloud Platform (GCP) zone for instance creation
+# Display available zones that support free-tiers along with a corresponding picker to select a zone
+# Prompt user to select a zone based on their geographic preference
 prompt_for_zone() {
   echo "\nTo create a free E2-Micro instance, you'll need to setup your VM in a colocation facility that supports free-tiers."
   echo " 1) Oregon: us-west1"
@@ -100,12 +104,15 @@ prompt_for_zone() {
   esac
 }
 
-# Automatically determines the Google Cloud region avoids the need to ask the user
+# Function to extract the region from a GCP zone
+# Use sed to parse the region part from the full zone
 get_region_from_zone() {
   REGION=$(echo $ZONE | sed 's/\(.*\)-.*/\1/')
 }
 
-# Function to validate URL
+# This function prompts the user to input the URL where their Ghost blog will be hosted.
+# It checks for valid URL formats and confirms the URL with the user before proceeding.
+# The URL must start with either 'http://' or 'https://'.
 setup_url() {
   while true; do
     read -p "Enter your blog URL (include http:// or https://): " url
@@ -135,7 +142,9 @@ setup_url() {
   done
 }
 
-# Function to help setup Mailgun
+# This function configures the Mailgun settings for sending emails through Ghost.
+# It gives the user the option to set up Mailgun and collects necessary credentials.
+# The function also lets the user choose the Mailgun SMTP host and confirms the choices before saving.
 setup_mailgun() {
   read -p "Do you want to setup Ghost to send emails using Mailgun? (y/n): " setup_choice
 
@@ -176,16 +185,11 @@ setup_mailgun() {
   
   setup_mail="--mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_password --mailhost $smtp_mailgun --mailport 2525"
   echo "Ghost will be configured with these Mailgun SMTP settings:\n$setup_mail"
-  
 }
 
-# Main function to validate and conform the instance name according to GCP rules.
-# Asks the user if they want to customize the VM name prefix using green-colored text.
-# Offers the default name 'ghost' if no customization is desired.
-# Constructs the full VM name in the format <CUSTOM_NAME>-ghost.
-# Adjusts the custom name prefix to conform to GCP naming rules, eliminating invalid characters and case.
-# Checks if a VM with the intended name already exists in the project; if so, prompts the user for a new name.
-# Once a unique and GCP-compliant name is confirmed, informs the user of the final VM name.
+# This function is responsible for naming the Google Cloud VM instance.
+# It allows for customization of the instance name and ensures that the chosen name adheres to GCP naming rules.
+# Additionally, it checks for existing instances with the same name to avoid naming conflicts.
 name_instance() {
   while true; do
     # Asks the user if they want to customize the VM name prefix.
@@ -237,7 +241,6 @@ name_instance() {
   done
 }
 
-
 # This function performs necessary setup before creating a GCP instance.
 # It sets up the Google Cloud project ID, fetches the default service account email,
 # updates IAM roles, and prepares the region and zone information.
@@ -262,56 +265,18 @@ prepare_instance_environment() {
   SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret="service-account-password-$INSTANCE_NAME" --project=$SECRET_PROJECT_ID)
 }
 
-# This function performs the following tasks:
-# 1. Creates SSH keys for the root and service-account users on a specified GCP instance.
-# 2. Retrieves these public keys and saves them into a temporary file.
-# 3. Uploads these public keys to the project metadata so that future instances can use them.
-# 4. Deletes the temporary file.
-# create_and_add_ssh_keys() {
-#   # Create SSH keys for root and service-account
-#   gcloud compute ssh $instance_name --username=root
-#   gcloud compute ssh $instance_name --username=service-account
-
-#   # Fetch public keys
-#   root_key=$(cat $HOME/.ssh/google_compute_engine.pub)
-#   # Checks if the $root_key string starts with "root:". If not (||), it prepends "root:" to the key.
-#   [[ $root_key == root:* ]] || root_key="root:${root_key}"
-
-#   service_account_key=$(cat $HOME/.ssh/service_account.pub)
-#   # Checks if the $service-account string starts with "service-account:". If not (||), it prepends "service-account:" to the key. 
-#   [[ $service_account_key == service-account:* ]] || service_account_key="service-account:${service_account_key}"
-
-#   # Concatenate keys into one string with usernames
-#   all_keys="root:${root_key}\nservice-account:${service_account_key}"
-
-#   # Save keys to a temporary file
-#   temp_file="${HOME}/temp_keys.txt"
-#   echo -e $all_keys > $temp_file
-
-#   # Add public keys to the project metadata
-#   gcloud compute project-info add-metadata --metadata-from-file ssh-keys=$temp_file
-
-#   # Clean up temporary file
-#   rm $temp_file
-# }
-
-
-# Create a Google Cloud VM instance based on user input for zone and custom name.
-# The VM will have the following configurations:
-# - Machine type: e2-micro
-# - Disk size: 30GB
-# - Operating System: Ubuntu 22.04
-# - Network Tags: Mail, custom name for HTTP and HTTPS firewall rules
-#!/bin/bash
-
+  # Retrieve MySQL password from Google Secret Manager
+  # Check for existing firewall rule for SMTP port 2525, create if not found
+  # Create Google Cloud Compute Engine instance with specified parameters
+  # - Machine type: e2-micro
+  # - Disk size: 30GB
+  # - Operating System: Ubuntu 22.04
+  # - Network Tags: Mail, custom name for HTTP and HTTPS firewall rules
+  # Initialize instance with a startup script to configure users, permissions, and SSH keys
+  # Loop until SSH is available on the new instance, then exit
 create_instance () {
 # Retrieve the secret from Google Secret Manager
 mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
-
-# # Explain that you're gonna be asked for your mysql password in a bit
-# color_text red "Ghost install will ask for this MySQL password, copy it now:\n$mysql_password"
-# color_text green "\n\nPress any key to continue"
-# read -n 1 -s -r
 
 # Check if the firewall rule for sending email exists
 if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
@@ -327,7 +292,9 @@ else
         --target-tags=mail
 fi
 
-# Create the instance
+# This command creates a Google Cloud Compute Engine instance with the specified parameters, including machine type, image, disk size, and metadata for startup script.
+# The startup-script initializes important variables, sets passwords for root and service-account users, ensures .ssh directories exist and populates authorized_keys.
+# The SSH Checker waits for the SSH to become available before proceeding to the next step.
   gcloud compute instances create $INSTANCE_NAME \
     --zone=$ZONE \
     --machine-type=e2-medium \
@@ -367,16 +334,21 @@ fi
     echo "$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/ssh-keys-for-service-account)" >> /home/service-account/.ssh/authorized_keys
     '
 
-  # SSH Checker
+# Loop until SSH is available for the given Google Cloud Compute instance
+# Try to run a simple echo command on the remote server to check SSH connectivity
+# If unsuccessful, wait for 5 seconds before retrying
+# Exit the loop once SSH is available and echo "SSH is now available."
   until gcloud compute ssh $INSTANCE_NAME --zone $ZONE --command "echo connected" &> /dev/null
   do
     echo "Waiting for SSH to be available..."
     sleep 5
   done
   echo "SSH is now available."
-
 }
 
+# This function handles SSHing into the Google Cloud instance and executing a remote script.
+# It performs retries up to a maximum limit if the SSH connection or remote script execution fails.
+# Additionally, it clears and loads the appropriate SSH keys to avoid conflicts and sets the SSH options to skip host key verification.
 ssh_instance () {
     # Get the IP for the instance
     INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
@@ -403,18 +375,23 @@ ssh_instance () {
         exit 1
       fi
 
-#       ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} -o IdentitiesOnly=yes service-account@$INSTANCE_IP
+# Execute SSH to connect to the instance, passing various options and key file
+# Utilize a "here document" to execute multiple commands after SSH login
 
-        ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
-        # Open a screen session
-        screen -S ghost_install
+# - 'ssh -t': Force pseudo-terminal allocation, often used when running an interactive application
+# - 'IdentitiesOnly=yes': Specifies that ssh should only use the authentication identity files configured, ignoring other default files
+# - 'StrictHostKeyChecking=no': Automatically adds new host keys to the user's known hosts files
 
-        # Download the installer script from GitHub
-        curl -O https://raw.githubusercontent.com/danielraffel/gcloud_ghost_instancer/main/install_on_server.sh
-
-        # Make it executable and run it
-        chmod +x install_on_server.sh
-        sh ./install_on_server.sh
+# Inside the SSH session, the following tasks are performed:
+# 1) Open a new 'screen' session named 'ghost_install'
+# 2) Download a shell script that installs Ghost from a GitHub repository
+# 3) Make the downloaded script executable
+# 4) Execute the script
+ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
+screen -S ghost_install
+curl -O https://raw.githubusercontent.com/danielraffel/gcloud_ghost_instancer/main/install_on_server.sh
+chmod +x install_on_server.sh
+sh ./install_on_server.sh
 ENDSSH
 
       SSH_EXIT_CODE=$?
@@ -455,7 +432,10 @@ check_and_enable_secret_manager() {
   fi
 }
 
-# Function to set passwords and store it in Google Cloud Secret Manager for secure access
+# This function generates a secure 32-character password using OpenSSL.
+# It then creates a unique secret name by appending the password's intended use and the VM instance name.
+# The generated password is stored in Google Cloud's Secret Manager under the generated secret name.
+# If needed, the function can overwrite an existing secret instead of creating a new one.
 generate_and_store_password() {
   # Generate a secure 32-character password
   password=$(openssl rand -base64 32)
@@ -472,7 +452,10 @@ generate_and_store_password() {
   echo "Password generated and stored as $secret_name"
 }
 
-# Function to help setup custom ghost install parameters based on supplied URL and Mailgun (after instance name is defined)
+# This function prepares and stores the setup parameters needed for installing Ghost.
+# It initializes ghost_install_setup_parameters with the URL provided.
+# If setup_mail is defined and non-empty, it appends these mail setup parameters to ghost_install_setup_parameters.
+# Finally, this concatenated string is saved as a Google Cloud secret, allowing it to be securely accessed later on the server.
 custom_ghost_setup_parameters() {
   
   # Initialize ghost_install_setup_parameters with url
@@ -487,6 +470,12 @@ custom_ghost_setup_parameters() {
   printf "%s" "$ghost_install_setup_parameters" | gcloud secrets create "ghost_install_setup_parameters-$INSTANCE_NAME" --data-file=-
 }
 
+# This function is responsible for generating SSH keys, creating a GCP service account, and storing certain variables for later use.
+# It begins by generating SSH keys for the root and service-account users in the .ssh directory.
+# It fetches the default service account email for the Compute Engine and stores it in a variable.
+# A new service account is then created and assigned the role of secretAccessor.
+# The IAM role of the default service account is also updated to enable access to Secret Manager.
+# Finally, key setup variables like INSTANCE_NAME, ZONE, and REGION are saved to a temporary file for later use in other functions like downgrade_instance.
 create_keys () { 
   # Generate SSH keys for root and service-account in the ssh directory
   ssh-keygen -t rsa -b 4096 -C "root" -f "$HOME/.ssh/root_key-${INSTANCE_NAME}"
@@ -512,10 +501,16 @@ gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
   echo "REGION=$REGION" >> $HOME/temp_vars.sh
 }
 
+# This function performs several actions to downgrade a Google Cloud Platform (GCP) VM instance from e2-medium to e2-micro.
+# It starts by stopping the existing e2-medium instance, switches its machine type to e2-micro, and then restarts it.
+# Additionally, it creates a Standard tier static IP address and associates it with the restarted instance.
+# Finally, it cleans up any temporary variables and initiates an SSH session into the new machine.
 downgrade_instance() {
-
   # Source the variables from temp_vars.sh to complete the next few commands since they are no longer in memory
   source $HOME/temp_vars.sh
+
+  # Get the name of the access config for the instance
+  INSTANCE_ACCESS_CONFIG=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].name)')
 
   # stop the e2-medium instance
   gcloud compute instances stop $INSTANCE_NAME --zone=$ZONE
@@ -532,11 +527,11 @@ downgrade_instance() {
   # Get the static IP address
   STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
 
-  # Remove existing external IP
-  gcloud compute instances delete-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name "External NAT"
+  # Remove any existing external IP from micro-instance
+  gcloud compute instances delete-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="$INSTANCE_ACCESS_CONFIG"
 
   # Attach the static IP
-  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name "External NAT" --address $STATIC_IP
+  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="$STATIC_IP_NAME" --address=$STATIC_IP --network-tier=STANDARD
 
   # start the e2-micro
   gcloud compute instances start $INSTANCE_NAME --zone=$ZONE
@@ -551,10 +546,29 @@ downgrade_instance() {
   color_text green "\nYour VM is now running at: $STATIC_IP\n"
 
   # Remove the host key for the instance from the local known_hosts file in case it was previously added
-  ssh-keygen -R $STATIC_IP
+  # ssh-keygen -R $STATIC_IP
 
   # Add the static IP address to Known Hosts file
   ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
+
+  # Initialize a counter to keep track of elapsed time
+  counter=0
+
+  # Loop to check if SSH is available on the specified IP and port
+  while true; do
+    nc -z -w5 $STATIC_IP 22 && break  # Check if port 22 is open on the static IP
+    echo "Waiting for SSH to be available..."
+    sleep 5  # Wait for 5 seconds before checking again
+    
+    # Increment counter by 5 to account for the 5-second sleep
+    let counter=counter+5
+
+    # Break out of the loop if 90 seconds have passed without a successful connection
+    if [ $counter -ge 90 ]; then
+      echo "Timed out waiting for SSH."
+      break
+    fi
+  done
 
   # SSH into the remote machine at the static address
   ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$STATIC_IP << "ENDSSH"
@@ -563,7 +577,6 @@ downgrade_instance() {
   cd /var/www/ghost
   ghost ls
 ENDSSH
-  
 }
 
 # Optional debug function used during development.
@@ -581,7 +594,6 @@ debug_vm() {
   journalctl -f
 ENDSSH
 }
-
 
 # Main function that orchestrates script behavior
   main() {

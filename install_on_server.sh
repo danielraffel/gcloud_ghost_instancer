@@ -35,12 +35,10 @@ install_ghost_dependencies() {
     ZONE=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/zone" -H "Metadata-Flavor: Google" | awk -F '/' '{print $4}')
 
     # Get the IP for the instance
-    # INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
     INSTANCE_IP=$(curl -s "http://metadata.google.internal/computeMetadata/v1/instance/network-interfaces/0/access-configs/0/external-ip" -H "Metadata-Flavor: Google")
 
 
     # Retrieve MySQL Password from Google Secret Manager
-    # Define the secret name
     secret_name="mysql-password-$INSTANCE_NAME"
 
     # Retrieve the secret from Google Secret Manager
@@ -78,6 +76,7 @@ EOF
     sudo killall -u mysql
     sudo systemctl restart mysql.service
     
+# Never got these to work not sure they are even necessary keeping them here for reference
     # Configure MySQL as follows to avoid sudo mysql_secure_installation which is interactive and requires a user to enter details
     # By default, MySQL may have the validate_password plugin enabled, which enforces password strength policies
 #    sudo mysql -uroot -p$mysql_password -e "UNINSTALL PLUGIN validate_password;"
@@ -109,10 +108,6 @@ EOF
 
     #Restart MySQL and log in:
     sudo /etc/init.d/mysql restart
-
-    # Connect to MySQL using the configuration file
-    # sudo mysql --defaults-extra-file="$mysql_config_file"
-
 }
 
 set_up_ghost() {
@@ -125,12 +120,7 @@ set_up_ghost() {
     sudo chown service-account:service-account /var/www/ghost
     sudo chmod 775 /var/www/ghost
 
-    # Navigate to the website folder and install Ghost:
-    # cd /var/www/ghost && ghost install
-    # cd /var/www/ghost && ghost install --setup-mysql --setup-nginx --setup-ssl --setup-systemd --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --start
-    # Fetch the secret from gCloud and store it in a variable
-
-    # Navigate to the website folder:
+    # Navigate to the ghost directory
     cd /var/www/ghost
 
     # Fetch the secret from gCloud and store it in a variable
@@ -139,7 +129,7 @@ set_up_ghost() {
     # Run ghost install with the fetched parameters
     ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1
 
-    # For reasons I do not understand MySQL might error so this will try to address the issue
+    # For reasons I do not understand MySQL might error so this will try to address the issue™
     # Create a new temporary SQL file
     sql_file2=$(mktemp)
 
@@ -148,7 +138,7 @@ set_up_ghost() {
     exit 1
     fi
 
-    # Add MySQL commands to address the issue
+    # Add MySQL commands to address the issue™
     cat <<EOF > "$sql_file2"
     ALTER USER 'root'@'localhost' IDENTIFIED WITH mysql_native_password BY '$mysql_password';
 EOF
@@ -165,7 +155,6 @@ EOF
     # Free up RAM by disabling snap - this can be commented out if planning to run on something other than a micro-instance
     sudo systemctl stop snapd.service
     sudo systemctl disable snapd.service  
-
 }
 
 enable_ghost_auto_start() {
