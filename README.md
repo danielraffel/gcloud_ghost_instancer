@@ -12,7 +12,7 @@ This script will help you set up and run a Google Compute Engine E2-Micro virtua
 
 **Usage**
 
-To run the script, open a terminal and navigate to the directory containing the script. Then, run the following command:
+Clone the repo, open a terminal and navigate to the directory containing the scripts. Then, run the following command:
 
 ```
 sh gcloud_ghost_instancer.sh
@@ -23,10 +23,10 @@ sh gcloud_ghost_instancer.sh
 The script will prompt you for the following information, such as:
 
 * Do you want to proceed with creating a free Virtual Machine on Google Cloud?
-* Do you want to automatically download and install the gcloud CLI? (optional)
-* Select a zone to create your free tier VM in.
+* Do you want to automatically download and install the gcloud CLI? (pre-requisite)
+* etc...
 
-Once you have provided all of the necessary information, the script will create the VM and install Ghost.org. You will then be provided with the IP address of your VM and instructions on how to access the Ghost admin panel.
+Once you have provided all of the necessary information, the script will create the VM and install Ghost.org. You will then be provided with details of your VM and instructions on how to access the Ghost admin panel.
 
 **Troubleshooting**
 
