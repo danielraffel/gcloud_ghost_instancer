@@ -161,6 +161,11 @@ EOF
 
     #then run:
     ghost start
+
+    # Free up RAM by disabling snap - this can be commented out if planning to run on something other than a micro-instance
+    sudo systemctl stop snapd.service
+    sudo systemctl disable snapd.service  
+
 }
 
 enable_ghost_auto_start() {

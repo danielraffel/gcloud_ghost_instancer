@@ -514,7 +514,7 @@ gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
 
 downgrade_instance() {
 
-  # Source the variables from temp_vars.sh to complete the next few commands
+  # Source the variables from temp_vars.sh to complete the next few commands since they are no longer in memory
   source $HOME/temp_vars.sh
 
   # stop the e2-medium instance
@@ -522,18 +522,6 @@ downgrade_instance() {
 
   # change the machine type from e2-medium to e2-micro
   gcloud compute instances set-machine-type $INSTANCE_NAME --zone=$ZONE --machine-type=e2-micro
-
-  # start the e2-micro
-  gcloud compute instances start $INSTANCE_NAME --zone=$ZONE
-
-  # # Create a Standard tier static IP address
-  # gcloud compute addresses create $STATIC_IP_NAME --region=$REGION --network-tier=STANDARD
-
-  # # Add the static IP address to the instance
-  # gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="External NAT" --address $STATIC_IP_NAME
-
-  # # Get the static IP address
-  # STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
 
   # Assign a name to the static IP
   STATIC_IP_NAME="$INSTANCE_NAME-ip"
@@ -544,8 +532,14 @@ downgrade_instance() {
   # Get the static IP address
   STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
 
-  # Add the static IP address to the instance
-  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="External NAT" --address $STATIC_IP
+  # Remove existing external IP
+  gcloud compute instances delete-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name "External NAT"
+
+  # Attach the static IP
+  gcloud compute instances add-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name "External NAT" --address $STATIC_IP
+
+  # start the e2-micro
+  gcloud compute instances start $INSTANCE_NAME --zone=$ZONE
 
   # Delete the temporary variables file
   rm $HOME/temp_vars.sh
@@ -554,7 +548,7 @@ downgrade_instance() {
   # ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP 'ghost ls; exit'
 
   # Share machine IP address
-  color_text green "\nYour VM is now running at: $STATIC_IP"
+  color_text green "\nYour VM is now running at: $STATIC_IP\n"
 
   # Remove the host key for the instance from the local known_hosts file in case it was previously added
   ssh-keygen -R $STATIC_IP
@@ -563,12 +557,9 @@ downgrade_instance() {
   ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
 
   # SSH into the remote machine at the static address
-  ssh -t -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$STATIC_IP << "ENDSSH"
+  ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$STATIC_IP << "ENDSSH"
   # Open a screen session
   screen -S ghost_install
-  # Free up RAM by disabling snap on the micro-instance
-  sudo systemctl stop snapd.service
-  sudo systemctl disable snapd.service  
   cd /var/www/ghost
   ghost ls
 ENDSSH
