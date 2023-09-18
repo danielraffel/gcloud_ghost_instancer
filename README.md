@@ -29,7 +29,7 @@ Follow on-screen prompts for customization. These include free VM creation, auto
 
 **Troubleshooting**
 
-File issues for problems.
+[File issues](https://github.com/danielraffel/gcloud_ghost_instancer/issues/new) to report problems.
 
 **Security & Secrets**
 
