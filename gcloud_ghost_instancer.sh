@@ -268,13 +268,13 @@ prepare_instance_environment() {
   # Retrieve MySQL password from Google Secret Manager
   # Check for existing firewall rule for SMTP port 2525, create if not found
   # Create Google Cloud Compute Engine instance with specified parameters
-  # - Machine type: e2-micro
+  # - Machine type: e2-medium
   # - Disk size: 30GB
   # - Operating System: Ubuntu 22.04
   # - Network Tags: Mail, custom name for HTTP and HTTPS firewall rules
   # Initialize instance with a startup script to configure users, permissions, and SSH keys
   # Loop until SSH is available on the new instance, then exit
-create_instance () {
+create_instance() {
 # Retrieve the secret from Google Secret Manager
 mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
 
@@ -349,7 +349,7 @@ fi
 # This function handles SSHing into the Google Cloud instance and executing a remote script.
 # It performs retries up to a maximum limit if the SSH connection or remote script execution fails.
 # Additionally, it clears and loads the appropriate SSH keys to avoid conflicts and sets the SSH options to skip host key verification.
-ssh_instance () {
+ssh_instance() {
     # Get the IP for the instance
     INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
 
@@ -476,7 +476,7 @@ custom_ghost_setup_parameters() {
 # A new service account is then created and assigned the role of secretAccessor.
 # The IAM role of the default service account is also updated to enable access to Secret Manager.
 # Finally, key setup variables like INSTANCE_NAME, ZONE, and REGION are saved to a temporary file for later use in other functions like downgrade_instance.
-create_keys () { 
+create_keys() { 
   # Generate SSH keys for root and service-account in the ssh directory
   ssh-keygen -t rsa -b 4096 -C "root" -f "$HOME/.ssh/root_key-${INSTANCE_NAME}"
   ssh-keygen -t rsa -b 4096 -C "service-account" -f "$HOME/.ssh/service_account_key-${INSTANCE_NAME}"
