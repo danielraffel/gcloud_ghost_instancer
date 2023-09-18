@@ -1,8 +1,8 @@
-**README.md for gcloud_ghost_instancer.sh**
+*README.md for gcloud_ghost_instancer.sh*
 
 **About**
 
-This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with Ghost.org installed. An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs running it, subject to Google's terms and usage limits. While it's possible to run Ghost on an E2-Micro automating the software install seems to tax the machine. Therefore, this script installs the software on an E2-Medium server, immediately stops it once complete and then re-starts the server as an E2-Micro. I presume this will incure some cost. If I had to guess I'm thinking it would be measured in cents?
+This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with [Ghost.org](Ghost.org) installed. An E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs running it, subject to Google's terms and usage limits. While it's possible to run Ghost on an E2-Micro automating the software install seems to tax the machine. Therefore, this script installs the software on an E2-Medium server, immediately stops it once complete and then re-starts the server as an E2-Micro. I presume this will incure some cost. If I had to guess I'm thinking it would be measured in cents?
 
 **Requirements**
 
