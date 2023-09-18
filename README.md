@@ -1,3 +1,5 @@
+**[Blog Post](https://danielraffel.me/2023/09/18/learning-about-google-cloud-by-developing-a-ghost-org-installer/) about this project**
+
 **About**
 
 Automate the setup of a Google Compute Engine E2-Micro VM running [Ghost.org](Ghost.org) on macOS. Setup starts on a premium E2-Medium VM due to server load. And, ends with an Always Free tier VM running on an E2-Micro. Minimal setup costs, likely cents.
