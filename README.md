@@ -99,6 +99,7 @@ Enter same passphrase again:
 
 Assuming all runs smoothly the rest of the installer is automated. It should end with
 
+```
 Blog URL: https://ketchup.com
 MySQL hostname: localhost
 MySQL username: root
@@ -109,12 +110,14 @@ Set up NGINX? — Y
 Set up SSL? — Y
 Set up systemd? — Y
 Start Ghost? — Y
+```
 
 At the very end you'll be briefly SSH'd into your Micro-Instance and should see the status of your server.
 
-In the future, to ssh into your machine to do things like edit your config.production.json file and more go to your terminal and run...
+In the future, to ssh into your machine to do things like edit your config.production.json file and more go to your terminal and run:
+```
 ssh -t -i $HOME/.ssh/service_account_key-ketchup-ghost -o IdentitiesOnly=yes service-account@YourInstanceIP
-
+```
 Note: You will need to update YourInstanceIP with your external IP for your instance from [https://console.cloud.google.com/compute/instances]
 
 **Post Setup Action Items**
