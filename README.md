@@ -125,4 +125,4 @@ In the future, to ssh into your machine to do things like edit your config.produ
 ```
 ssh -t -i $HOME/.ssh/service_account_key-ketchup-ghost -o IdentitiesOnly=yes service-account@YourInstanceIP
 ```
-Note: You will need to update YourInstanceIP with your external IP for your instance from [https://console.cloud.google.com/compute/instances]
+Note: You will need to update YourInstanceIP with your external IP for your instance from [GCP Console](https://console.cloud.google.com/compute/instances)
