@@ -13,7 +13,7 @@ At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB mon
 * Google account
 * [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed (if not pre-installed the script will assist installing it for you)
 * macOS
-* While the setup flow supports setting up [Mailgun.com](Mailgun.com) to send emails you'll need to have previously registered a username/password
+* Previously set up [Mailgun.com](Mailgun.com) account if you want to configure sending emails (you'll need to provide your username/password)
 
 **Usage**
 
