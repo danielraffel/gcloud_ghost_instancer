@@ -101,8 +101,8 @@ sql_file2
 DNS configuration! You'll need to configure your Ghost instance to work with your DNS. This is currently outside of the scope of this installer and read me.
 
 * For now, I'd advise following [Scott's setup guide](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/):
-   * Step 2: Configuring your Domain
-   * Step 5: Finish Cloudflare configuration on this excellent setup site
+   * [Step 2: Configuring your Domain](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/#2-configure-the-domain)
+   * [Step 5: Finish Cloudflare configuration on this excellent setup site](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/#5-finish-cloudflare-configuration)
 
 **Potential Future Enhancements**
 
