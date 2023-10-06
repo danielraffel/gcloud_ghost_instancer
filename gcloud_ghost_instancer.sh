@@ -32,7 +32,7 @@ check_gcloud_install() {
   printf "gcloud SDK is required to proceed and could not be found.\nLearn more: https://cloud.google.com/sdk/docs\n"
 
   # Ask the user to proceed
-  color_text green "\nDo you want to automatically download gcloud SDK and proceed? (y/n): "
+  color_text green "\nDo you want to proceed with automatically downloading gcloud SDK and adding a shell alias? (y/n): "
     read -r install_gcloud
     if [ "$install_gcloud" = "y" ]; then
       echo "Installing gcloud..."
@@ -53,15 +53,15 @@ check_gcloud_install() {
 }
 
 # Function to check if gCloud is set up in either .bashrc or .zshrc
-# If not found, it adds an alias for 'll' to run 'ls -l' in both shell configuration files
+# If not found, it adds an alias for gcloud to run in shell configuration files
 # After updating the files, it reloads the corresponding shell configuration
 check_shell_setup() {
   if grep -q 'gcloud' ~/.bashrc || grep -q 'gcloud' ~/.zshrc; then
     :
   else
     echo "Setting up gCloud in .bashrc and .zshrc."
-    echo 'alias ll="ls -l"' >> ~/.bashrc
-    echo 'alias ll="ls -l"' >> ~/.zshrc
+    echo 'export PATH=$PATH:$HOME/google-cloud-sdk/bin' >> ~/.bashrc
+    echo 'export PATH=$PATH:$HOME/google-cloud-sdk/bin' >> ~/.zshrc
     source ~/.bashrc || source ~/.zshrc
   fi
 }
