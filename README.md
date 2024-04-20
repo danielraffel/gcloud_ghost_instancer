@@ -28,6 +28,15 @@ The script will:
 * Create a Cloudflare tunnel
 * Configure the tunnel to route traffic to Ghost at your domain
 
+**Pre-requisites**
+
+1. Visit https://console.cloud.google.com/ in a browser
+2. Agree to GCP terms
+3. Add payment info to GCP
+4. Copy your Google project ID
+5. Install gcloud CLI on your computer https://cloud.google.com/sdk/docs/install
+6. In your terminal run `gcloud auth login` to auth the CLI
+
 **Usage**
 
 ```
@@ -36,9 +45,11 @@ cd repo-directory
 sh gcloud_ghost_instancer.sh
 ```
 
+Note: Follow the prompts, when asked to enable API services on your project enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. Once API services are enabled Secret Manager will be enabled and passwords will be created and stored in the cloud and a local public/private rsa key pair will be generated locally.
+
 **Instructions**
 
-Follow on-screen prompts for customization. These include free VM creation, automatically downloading the gcloud CLI, and more. I walk through them below in Post Setup Screen Action Items.
+Follow on-screen prompts for customization. If this is your first time using GCP you will be asked to enable API services on your project enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. The prompts are described below in Post Setup Screen Action Items.
 
 **Troubleshooting**
 
