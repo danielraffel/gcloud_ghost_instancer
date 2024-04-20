@@ -14,6 +14,19 @@ At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB mon
 * [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed (if not pre-installed the script will assist installing it for you)
 * macOS
 * Previously set up [Mailgun.com](Mailgun.com) account if you want to configure sending emails (you'll need to provide your username/password)
+* A domain hosted on Cloudflare (required for automatic SSL setup)
+
+**Automatic Cloudflare Setup**
+
+The script now automatically sets up Cloudflare for SSL and configures a tunnel to route traffic to Ghost. To use this feature, you must have your domain hosted on Cloudflare.
+
+When the script runs on your server, it will display a Cloudflare URL in the terminal. Simply copy this URL and open it in your browser to complete the setup.
+
+The script will:
+
+* Download and install cloudflared
+* Create a Cloudflare tunnel
+* Configure the tunnel to route traffic to Ghost at your domain
 
 **Usage**
 
@@ -80,13 +93,29 @@ sql_file
 sql_file2
 ```
 
+**FAQs specific to Cloudflare:**
+
+Managing Cloudflared Tunnels When SSHd On Server:
+* List: `cloudflared tunnel list`
+* Delete: `cloudflared tunnel delete <tunnel_name>`
+
+Managing Cloudflared Service:
+* Start/Stop: `sudo systemctl start/stop cloudflared`
+* Check Status: `sudo systemctl status cloudflared`
+
+**Deleting Cloudflare Resources Created by This Script:**
+
+On Cloudflare.com:
+
+1. Tunnel: A tunnel is created which can be deleted by navigating to Zero Trust > Access > Tunnels in the Cloudflare Dashboard (login required).
+2. Subdomain with Tunnel: A subdomain is created on your chosen domain with a tunnel. This can be deleted by going to your domain's DNS settings at Choose your domain > DNS in the Cloudflare Dashboard (login required) and looking for the CNAME on your Domain.
+
 **Known Issues**
 
 * Installer is not optimized to be installed on a free-tier E2-Micro
 * Ghost installation presents a few errors but is still functional. This is likely due to the installer running in a pseudo terminal and as far as I know are not actual issues.
 * Not tested on Linux / Windows. To run this on platforms you will need the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install). The script checks and installs this for macOS but doesn't do that for other platforms.
 * SSL was setup with a no-prompt installer. And, this may only supports https. I don't know that for certain so for now the script doesn't currently block setting up http Blog URLs.
-   * I'm accustomed to a few extra steps setting up Lets Encrypt. One day I might run this with a new domain and write the final setup steps for hosting DNS via SSL. If you beat me to that please share!
 * I have not personally tested end-to-end Mailgun setup with these flows (but it likely works since it leans on the script just collecting parameters and passing them to Ghost installer to generate the config correctly.) 
 
 **Additional Information**
@@ -94,19 +123,10 @@ sql_file2
 * This script is provided for informational purposes only. It is not officially supported by me or Google Cloud.
 * The script likely contain bugs. Please use it at your own risk.
 * Learn about [Google Secret Manager](https://cloud.google.com/secret-manager/)
-* There are some Post Setup Action Items that will be required such as configuring your Ghost install with your DNS.
 
-**Post Setup Action Items**
-
-DNS configuration! You'll need to configure your Ghost instance to work with your DNS. This is currently outside of the scope of this installer and read me.
-
-* For now, I'd advise following [Scott's setup guide](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/):
-   * [Step 2: Configuring your Domain](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/#2-configure-the-domain)
-   * [Step 5: Finish Cloudflare configuration on this excellent setup site](https://scottleechua.com/blog/self-hosting-ghost-on-google-cloud/#5-finish-cloudflare-configuration)
 
 **Potential Future Enhancements**
 
-* Automate DNS and SSL setup.
 * Explore ways to customize additional install options.
 
 **Setup Screen Action Items**
