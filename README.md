@@ -45,11 +45,10 @@ cd repo-directory
 sh gcloud_ghost_instancer.sh
 ```
 
-Note: Follow the prompts, when asked to enable API services on your project enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. Once API services are enabled Secret Manager will be enabled and passwords will be created and stored in the cloud and a local public/private rsa key pair will be generated locally.
-
 **Instructions**
 
-Follow on-screen prompts for customization. If this is your first time using GCP you will be asked to enable API services on your project enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. The prompts are described below in Post Setup Screen Action Items.
+Follow on-screen prompts for customization. If this is your first time using GCP you will be asked to enable API services on your project enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. The prompts are described below in Post Setup Screen Action Items. Once API services are enabled Secret Manager will be enabled and passwords will be created and stored in the cloud and a local public/private rsa key pair will be generated locally.
+
 
 **Troubleshooting**
 
