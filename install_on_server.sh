@@ -1,32 +1,36 @@
 #!/bin/bash
 
+sudo_no_prompt() {
+    echo "$SERVICE_ACCOUNT_PASSWORD" | sudo -S "$@"
+}
+
 install_ghost_dependencies() {
     # Update Linux
-    sudo apt update && apt -y upgrade
+    sudo_no_prompt apt update && apt -y upgrade
 
     #Install Nginx and open the firewall
-    sudo apt install -y nginx && sudo ufw allow 'Nginx Full'
+    sudo_no_prompt apt install -y nginx && sudo_no_prompt ufw allow 'Nginx Full'
 
     #Install NodeJS
-    sudo apt update
-    sudo apt install -y ca-certificates curl gnupg
-    sudo mkdir -p /etc/apt/keyrings
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
+    sudo_no_prompt apt update
+    sudo_no_prompt apt install -y ca-certificates curl gnupg
+    sudo_no_prompt mkdir -p /etc/apt/keyrings
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo_no_prompt gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
     NODE_MAJOR=18
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
-    sudo apt update
-    sudo apt install nodejs -y
-    sudo npm install -g npm@latest
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo_no_prompt tee /etc/apt/sources.list.d/nodesource.list
+    sudo_no_prompt apt update
+    sudo_no_prompt apt install nodejs -y
+    sudo_no_prompt npm install -g npm@latest
 
     #Install MySQL
-    sudo apt install -y mysql-server
+    sudo_no_prompt apt install -y mysql-server
 
     #Clean up
-    sudo apt -y autoremove
+    sudo_no_prompt apt -y autoremove
 
     #Start MySQL in modified mode
-    sudo systemctl set-environment MYSQLD_OPTS="--skip-networking --skip-grant-tables"
-    sudo systemctl start mysql.service
+    sudo_no_prompt systemctl set-environment MYSQLD_OPTS="--skip-networking --skip-grant-tables"
+    sudo_no_prompt systemctl start mysql.service
 
     # Set the instance name
     INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/name)
@@ -65,60 +69,60 @@ install_ghost_dependencies() {
 EOF
 
     # Execute MySQL commands
-    sudo mysql -u root < "$sql_file"
+    sudo_no_prompt mysql -u root < "$sql_file"
 
     # Clean up the temporary SQL file
     rm -f "$sql_file"
 
     # Restart MySQL and switch to production mode. Run
-    sudo systemctl unset-environment MYSQLD_OPTS
-    sudo systemctl revert mysql
-    sudo killall -u mysql
-    sudo systemctl restart mysql.service
+    sudo_no_prompt systemctl unset-environment MYSQLD_OPTS
+    sudo_no_prompt systemctl revert mysql
+    sudo_no_prompt killall -u mysql
+    sudo_no_prompt systemctl restart mysql.service
     
 # Never got these to work not sure they are even necessary keeping them here for reference
-    # Configure MySQL as follows to avoid sudo mysql_secure_installation which is interactive and requires a user to enter details
+    # Configure MySQL as follows to avoid sudo_no_prompt mysql_secure_installation which is interactive and requires a user to enter details
     # By default, MySQL may have the validate_password plugin enabled, which enforces password strength policies
-#    sudo mysql -uroot -p$mysql_password -e "UNINSTALL PLUGIN validate_password;"
+#    sudo_no_prompt mysql -uroot -p$mysql_password -e "UNINSTALL PLUGIN validate_password;"
     # Remove the anonymous user accounts, which can be a security risk if left in the MySQL database
-#    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'localhost'"
+#    sudo_no_prompt mysql -uroot -p$mysql_password -e "DROP USER ''@'localhost'"
     # Allow Root Login Remotely -- don't think we need to do this
     # mysql -e "ALTER USER 'root'@'localhost' IDENTIFIED WITH 'mysql_native_password' BY 'your_password';"
     # Because our hostname varies we'll use some Bash magic here.
-#    sudo mysql -uroot -p$mysql_password -e "DROP USER ''@'$(hostname)'"
+#    sudo_no_prompt mysql -uroot -p$mysql_password -e "DROP USER ''@'$(hostname)'"
     # Drops the 'test' database, which is a default database that may not be needed in a production environment
-#    sudo mysql -uroot -p$mysql_password -e "DROP DATABASE test"
+#    sudo_no_prompt mysql -uroot -p$mysql_password -e "DROP DATABASE test"
     # Reloads the privilege tables, ensuring that the changes made to user accounts and databases take effect immediately
-#    sudo mysql -uroot -p$mysql_password -e "FLUSH PRIVILEGES"
+#    sudo_no_prompt mysql -uroot -p$mysql_password -e "FLUSH PRIVILEGES"
 
     # #Restart MySQL and log in:
-    # sudo /etc/init.d/mysql restart
+    # sudo_no_prompt /etc/init.d/mysql restart
 
     # Define the MySQL configuration file
     mysql_config_file="/etc/mysql/my.cnf"
 
     # Turn off MySQL’s performance schema to reduce its memory usage
-    echo "[mysqld]" | sudo tee "$mysql_config_file"
-    echo "performance_schema=0" | sudo tee -a "$mysql_config_file"
+    echo "[mysqld]" | sudo_no_prompt tee "$mysql_config_file"
+    echo "performance_schema=0" | sudo_no_prompt tee -a "$mysql_config_file"
 
     # Add MySQL root user and password to the configuration file to make it easy to access at the command line
-    echo "[client]" | sudo tee -a "$mysql_config_file"
-    echo "user=root" | sudo tee -a "$mysql_config_file"
-    echo "password=$mysql_password" | sudo tee -a "$mysql_config_file"
+    echo "[client]" | sudo_no_prompt tee -a "$mysql_config_file"
+    echo "user=root" | sudo_no_prompt tee -a "$mysql_config_file"
+    echo "password=$mysql_password" | sudo_no_prompt tee -a "$mysql_config_file"
 
     #Restart MySQL and log in:
-    sudo /etc/init.d/mysql restart
+    sudo_no_prompt /etc/init.d/mysql restart
 }
 
 set_up_ghost() {
     # Install Ghost CLI
-    sudo npm install ghost-cli@latest -g
-    # sudo npm install ghost-cli@latest -g >> debug.log 2>&1
+    sudo_no_prompt npm install ghost-cli@latest -g
+    # sudo_no_prompt npm install ghost-cli@latest -g >> debug.log 2>&1
 
     #Make a new directory called ghost, set its permissions, then navigate to it:
-    sudo mkdir -p /var/www/ghost
-    sudo chown service-account:service-account /var/www/ghost
-    sudo chmod 775 /var/www/ghost
+    sudo_no_prompt mkdir -p /var/www/ghost
+    sudo_no_prompt chown service-account:service-account /var/www/ghost
+    sudo_no_prompt chmod 775 /var/www/ghost
 
     # Navigate to the ghost directory
     cd /var/www/ghost
@@ -144,7 +148,7 @@ set_up_ghost() {
 EOF
 
     # Execute MySQL commands
-    sudo mysql -u root < "$sql_file2"
+    sudo_no_prompt mysql -u root < "$sql_file2"
 
     # Clean up the temporary SQL file
     rm -f "$sql_file2"
@@ -153,8 +157,8 @@ EOF
     ghost start
 
     # Free up RAM by disabling snap - this can be commented out if planning to run on something other than a micro-instance
-    sudo systemctl stop snapd.service
-    sudo systemctl disable snapd.service  
+    sudo_no_prompt systemctl stop snapd.service
+    sudo_no_prompt systemctl disable snapd.service  
 }
 
 set_up_cloudflare() {
@@ -162,19 +166,19 @@ set_up_cloudflare() {
     URL_MINUS_PREFIX=$(echo "$url" | sed -e 's%^http[s]*://%%')
 
     # Add cloudflare gpg key
-    sudo mkdir -p --mode=0755 /usr/share/keyrings
-    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+    sudo_no_prompt mkdir -p --mode=0755 /usr/share/keyrings
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo_no_prompt tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 
     # Add this repo to your apt repositories
-    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo_no_prompt tee /etc/apt/sources.list.d/cloudflared.list
 
     # install cloudflared
-    sudo apt-get update && sudo apt-get install cloudflared
-    sudo cloudflared tunnel login
-    sudo cloudflared tunnel create $CUSTOM_NAME
-    sudo cloudflared tunnel route ip add $STATIC_IP/32 $CUSTOM_NAME
-    sudo cloudflared tunnel route dns $CUSTOM_NAME $URL_MINUS_PREFIX
-    tunnel_id=$(sudo cloudflared tunnel info $CUSTOM_NAME | grep -oP 'Your tunnel \K([a-z0-9-]+)')
+    sudo_no_prompt apt-get update && sudo_no_prompt apt-get install cloudflared
+    sudo_no_prompt cloudflared tunnel login
+    sudo_no_prompt cloudflared tunnel create $CUSTOM_NAME
+    sudo_no_prompt cloudflared tunnel route ip add $STATIC_IP/32 $CUSTOM_NAME
+    sudo_no_prompt cloudflared tunnel route dns $CUSTOM_NAME $URL_MINUS_PREFIX
+    tunnel_id=$(sudo_no_prompt cloudflared tunnel info $CUSTOM_NAME | grep -oP 'Your tunnel \K([a-z0-9-]+)')
 
     # Create config file
     mkdir /etc/cloudflared
