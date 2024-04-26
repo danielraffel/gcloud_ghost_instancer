@@ -157,41 +157,41 @@ EOF
     sudo systemctl disable snapd.service  
 }
 
-set_up_cloudflare() {
-    # Remove the http:// or https:// prefix from the URL
-    URL_MINUS_PREFIX=$(echo "$url" | sed -e 's%^http[s]*://%%')
+# set_up_cloudflare() {
+#     # Remove the http:// or https:// prefix from the URL
+#     URL_MINUS_PREFIX=$(echo "$url" | sed -e 's%^http[s]*://%%')
 
-    # Add cloudflare gpg key
-    sudo mkdir -p --mode=0755 /usr/share/keyrings
-    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
+#     # Add cloudflare gpg key
+#     sudo mkdir -p --mode=0755 /usr/share/keyrings
+#     curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | sudo tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null
 
-    # Add this repo to your apt repositories
-    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
+#     # Add this repo to your apt repositories
+#     echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | sudo tee /etc/apt/sources.list.d/cloudflared.list
 
-    # install cloudflared
-    sudo apt-get update && sudo apt-get install cloudflared
-    sudo cloudflared tunnel login
-    sudo cloudflared tunnel create $CUSTOM_NAME
-    sudo cloudflared tunnel route ip add $STATIC_IP/32 $CUSTOM_NAME
-    sudo cloudflared tunnel route dns $CUSTOM_NAME $URL_MINUS_PREFIX
-    tunnel_id=$(sudo cloudflared tunnel info $CUSTOM_NAME | grep -oP 'Your tunnel \K([a-z0-9-]+)')
+#     # install cloudflared
+#     sudo apt-get update && sudo apt-get install cloudflared
+#     sudo cloudflared tunnel login
+#     sudo cloudflared tunnel create $CUSTOM_NAME
+#     sudo cloudflared tunnel route ip add $STATIC_IP/32 $CUSTOM_NAME
+#     sudo cloudflared tunnel route dns $CUSTOM_NAME $URL_MINUS_PREFIX
+#     tunnel_id=$(sudo cloudflared tunnel info $CUSTOM_NAME | grep -oP 'Your tunnel \K([a-z0-9-]+)')
 
-    # Create config file
-    mkdir /etc/cloudflared
-    echo "tunnel: $CUSTOM_NAME" > /etc/cloudflared/config.yml
-    echo "credentials-file: /root/.cloudflared/$tunnel_id.json" >> /etc/cloudflared/config.yml
-    echo "protocol: quic" >> /etc/cloudflared/config.yml
-    echo "logfile: /var/log/cloudflared.log" >> /etc/cloudflared/config.yml
-    echo "loglevel: debug" >> /etc/cloudflared/config.yml
-    echo "transport-loglevel: info" >> /etc/cloudflared/config.yml
-    echo "ingress:" >> /etc/cloudflared/config.yml
-    echo " - hostname: $URL_MINUS_PREFIX" >> /etc/cloudflared/config.yml
-    echo "   service: http://localhost:2368" >> /etc/cloudflared/config.yml
-    echo " - service: http_status:404" >> /etc/cloudflared/config.yml
-    cloudflared service install
-    systemctl start cloudflared
-    systemctl status cloudflared
-}
+#     # Create config file
+#     mkdir /etc/cloudflared
+#     echo "tunnel: $CUSTOM_NAME" > /etc/cloudflared/config.yml
+#     echo "credentials-file: /root/.cloudflared/$tunnel_id.json" >> /etc/cloudflared/config.yml
+#     echo "protocol: quic" >> /etc/cloudflared/config.yml
+#     echo "logfile: /var/log/cloudflared.log" >> /etc/cloudflared/config.yml
+#     echo "loglevel: debug" >> /etc/cloudflared/config.yml
+#     echo "transport-loglevel: info" >> /etc/cloudflared/config.yml
+#     echo "ingress:" >> /etc/cloudflared/config.yml
+#     echo " - hostname: $URL_MINUS_PREFIX" >> /etc/cloudflared/config.yml
+#     echo "   service: http://localhost:2368" >> /etc/cloudflared/config.yml
+#     echo " - service: http_status:404" >> /etc/cloudflared/config.yml
+#     cloudflared service install
+#     systemctl start cloudflared
+#     systemctl status cloudflared
+# }
 
 enable_ghost_auto_start() {
     #Enable Autostart from the home directory of service_account, run:
@@ -210,7 +210,7 @@ enable_ghost_auto_start() {
 main() {
     install_ghost_dependencies
     set_up_ghost
-    set_up_cloudflare
+    # set_up_cloudflare
     enable_ghost_auto_start
 }
 
