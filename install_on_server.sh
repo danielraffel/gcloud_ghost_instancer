@@ -127,7 +127,7 @@ set_up_ghost() {
     ghost_install_setup_parameters=$(gcloud secrets versions access latest --secret="ghost_install_setup_parameters-$INSTANCE_NAME")
 
     # Run ghost install with the fetched parameters
-    ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1
+    ghost install $ghost_install_setup_parameters --url $url --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1
 
     # For reasons I do not understand MySQL might error so this will try to address the issue™
     # Create a new temporary SQL file
