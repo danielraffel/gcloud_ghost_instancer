@@ -123,6 +123,10 @@ set_up_ghost() {
     # Navigate to the ghost directory
     cd /var/www/ghost
 
+    # Ensure that the content directory is owned by the 'ghost' system user
+    sudo mkdir -p /var/www/ghost/content
+    sudo chown -R ghost:ghost /var/www/ghost/content
+
     # Fetch the secret from gCloud and store it in a variable
     ghost_install_setup_parameters=$(gcloud secrets versions access latest --secret="ghost_install_setup_parameters-$INSTANCE_NAME")
 
