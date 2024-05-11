@@ -14,7 +14,7 @@ color_text() {
 # Initial setup prompt
 # For more information about Google Cloud Free Tier micro instances, visit: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits
 initial_prompt() {
-  printf "This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with Ghost.org installed.\n\nAn E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs, subject to Google's terms and usage limits.\nLearn more: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits\n"
+  echo -e "This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with https://ghost.org installed.\n\nAn E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs, subject to Google's terms and usage limits.\n\nLearn more: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits\n"
   color_text green "\nDo you want to proceed? (Y/n): "
   read -r setup_instance
 
