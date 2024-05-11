@@ -21,9 +21,6 @@ At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB mon
 1. Visit https://console.cloud.google.com/ in a browser
 2. Agree to GCP terms
 3. Add payment info to GCP
-4. Copy your Google project ID
-5. Install gcloud CLI on your computer https://cloud.google.com/sdk/docs/install
-6. In your terminal run `gcloud auth login` to auth the CLI
 
 **Usage**
 
@@ -35,7 +32,7 @@ bash gcloud_ghost_instancer.sh
 
 **Instructions**
 
-Follow on-screen prompts for customization. If this is your first time using GCP you will be asked to enable API services on your project enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. The prompts are described below in Post Setup Screen Action Items. Once API services are enabled Secret Manager will be enabled and passwords will be created and stored in the cloud and a local public/private rsa key pair will be generated locally.
+Follow on-screen prompts for customization. If this is your first time using GCP you will be asked to authorize your account with Google and enable API services on your project. Follow the prompts and enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. The prompts are described below in Post Setup Screen Action Items. Once API services are enabled Secret Manager will be enabled and passwords will be created and stored in the cloud and a local public/private rsa key pair will be generated locally.
 
 
 **Troubleshooting**
