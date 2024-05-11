@@ -125,7 +125,7 @@ get_region_from_zone() {
 # The URL must start with either 'http://' or 'https://'.
 setup_url() {
   while true; do
-    color_text green "\nEnter your blog URL (include http:// or https://): "
+    color_text green "\nEnter the URL where your site will be hosted (include http:// or https://): "
     read -p "" url
 
     # Check if URL is empty
@@ -156,7 +156,7 @@ setup_url() {
 # This function prompts the user to enter an email address which is required for configuring letsencrypt for SSL setup.
 setup_email() {
   while true; do
-    color_text green "\nEnter your email address for SSL configuration with Let's Encrypt: "
+    color_text green "\nEnter a valid email address to register your SSL certificate with https://letsencrypt.org: "
     read -p "" email
     if [[ "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$ ]]; then
       color_text yellow "\nYou entered: $email. Is this email address correct? (Y/n): "
