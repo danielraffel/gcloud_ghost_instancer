@@ -131,7 +131,7 @@ _Select a zone that sounds like it's located closest to you: 1_
 * _You entered: https://ketchup.com. Is this URL correct? (y/n): y_
 * Will setup Ghost with https://ketchup.com. Continuing...
 
-**Step 4)** nEnter your email address for SSL configuration with Let's Encrypt: username@domain.com
+**Step 4)** Enter your email address for SSL configuration with Let's Encrypt: username@domain.com
 * _You entered: username@domain.com. Is this URL correct? (y/n): y_
 * Email address confirmed. Continuing...
 
