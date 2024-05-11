@@ -85,11 +85,24 @@ authenticate_and_fetch_project() {
 
   PROJECT_ID=$(gcloud config get-value project 2> /dev/null)
   if [[ -z "$PROJECT_ID" ]]; then
-    echo "No Google Cloud project set. Attempting to fetch project..."
-    PROJECT_ID=$(gcloud config get-value project 2> /dev/null)
-    if [[ -z "$PROJECT_ID" ]]; then
-      echo "Authentication successful but no project selected. Exiting."
+    echo "No Google Cloud project set for the active account."
+    echo "Fetching the list of projects..."
+    PROJECT_LIST=$(gcloud projects list --format="value(projectId)")
+
+    if [[ -z "$PROJECT_LIST" ]]; then
+      echo "No projects found for the active account. Please create a project and set it as active."
       exit 1
+    else
+      echo "Please select a project to use:"
+      select PROJECT_ID in $PROJECT_LIST; do
+        if [[ -n "$PROJECT_ID" ]]; then
+          gcloud config set project "$PROJECT_ID"
+          echo "Project '$PROJECT_ID' set as active."
+          break
+        else
+          echo "Invalid selection. Please try again."
+        fi
+      done
     fi
   fi
   echo "Using project: $PROJECT_ID"
