@@ -60,22 +60,39 @@ check_shell_setup() {
   fi
 }
 
-# Function to authenticate the user and fetch the Google Cloud Platform project ID
+# Function to authenticate the user, check active account, and fetch the Google Cloud Platform project ID
 # Checks if a GCP project is already set in the gcloud config
-# If not, it initiates gcloud authentication
+# If not, it checks for active and authenticated accounts, initiates gcloud authentication if necessary
 # Upon successful authentication, it fetches the newly set project ID
 # Exits the script if authentication fails or no project is selected
 authenticate_and_fetch_project() {
+  echo "Checking for active Google Cloud account..."
+  local auth_list=$(gcloud auth list --format="value(account,status)")
+  local active_account=$(echo "$auth_list" | grep '*' | awk '{print $1}')
+
+  if [[ -z "$auth_list" ]]; then
+    echo "No Google Cloud accounts detected. Initiating login process..."
+    gcloud auth login
+    active_account=$(gcloud auth list --format="value(account,status)" | grep '*' | awk '{print $1}')
+  elif [[ -z "$active_account" ]]; then
+    echo "Multiple accounts are authenticated but none are set as active. Please set an active account using:"
+    echo "$auth_list" | awk '{print $1}'
+    echo "gcloud config set account 'ACCOUNT'"
+    exit 1
+  else
+    echo "Active Google Cloud account: $active_account"
+  fi
+
   PROJECT_ID=$(gcloud config get-value project 2> /dev/null)
   if [[ -z "$PROJECT_ID" ]]; then
-    echo "No Google Cloud project set. Starting authentication..."
-    gcloud auth login
+    echo "No Google Cloud project set. Attempting to fetch project..."
     PROJECT_ID=$(gcloud config get-value project 2> /dev/null)
     if [[ -z "$PROJECT_ID" ]]; then
-      echo "Authentication failed or no project selected. Exiting."
+      echo "Authentication successful but no project selected. Exiting."
       exit 1
     fi
   fi
+  echo "Using project: $PROJECT_ID"
 }
 
 # Function to prompt the user to select a Google Cloud Platform (GCP) zone for instance creation
