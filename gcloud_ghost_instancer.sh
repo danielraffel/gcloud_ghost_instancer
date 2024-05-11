@@ -240,13 +240,14 @@ setup_mailgun() {
 name_instance() {
   while true; do
     # Asks the user if they want to customize the VM name prefix.
-    printf "\nThis script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)\n"
-    read -r -p "$(color_text green "\nDo you want to add a customize prefix to your VM? (Y/n):") " CUSTOMIZE
+    printf "\nThis script will create a VM named 'ghost.' You have the option to add a custom prefix (e.g., 'daniel-ghost').\n"
+    read -r -p "$(color_text green "\nDo you want to add a custom prefix to your VM? (Y/n):") " CUSTOMIZE
 
     case "${CUSTOMIZE,,}" in  # Convert to lowercase
       y|yes|"")
         # Prompts for a custom VM name prefix if customization is desired.
-        read -r -p "$(color_text green "\nCustomize the prefix for your VM (e.g. 'yourprefix-ghost'):") " CUSTOM_NAME
+        printf "\nNote: Please use only lowercase letters, numbers, and dashes. Your prefix will be followed by a dash and then 'ghost'.\n"
+        read -r -p "$(color_text green "\nEnter the custom prefix for your VM (e.g., 'yourprefix-ghost'):") " CUSTOM_NAME
         ;;
       n|no)
         # Uses the default 'ghost' if no customization is desired.
@@ -274,10 +275,18 @@ name_instance() {
 
     # Informs the user if any adjustments were made to the name due to GCP rules.
     if [[ "$ORIGINAL_NAME" != "$CUSTOM_NAME" && -n "$ORIGINAL_NAME" ]]; then
-      green_text "\nName adjusted to '$INSTANCE_NAME' due to GCP rules. Is this OK?"
-      read -r -p $'\e[92m(Y/n):\e[0m ' CONFIRM
+      color_text green "\nName adjusted to '$INSTANCE_NAME' due to GCP rules. Is this OK?"
+      read -r -p "$(color_text green "(Y/n):") " CONFIRM
       case "${CONFIRM,,}" in
+        y|yes)
+          # Proceed with the current name since user confirmed
+          ;;
         n|no)
+          continue  # prompt again for name if not confirmed
+          ;;
+        *)
+          # Handle invalid input
+          color_text red "Invalid input. Please answer with Y/n."
           continue
           ;;
       esac
