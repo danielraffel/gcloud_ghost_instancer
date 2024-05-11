@@ -25,7 +25,7 @@ At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB mon
 **Usage**
 
 ```
-git clone git@github.com:danielraffel/gcloud_ghost_instancer.git
+git clone https://github.com/danielraffel/gcloud_ghost_instancer.git
 cd gcloud_ghost_instancer
 bash gcloud_ghost_instancer.sh
 ```
