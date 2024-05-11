@@ -10,15 +10,15 @@ At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB mon
 
 **Requirements**
 
-* Google account
-* [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed (if not pre-installed the script will assist installing it for you)
-* macOS
-* (Optional) Previously set up [Mailgun.com](Mailgun.com) account if you want to configure sending emails (you'll need to provide your username/password)
-* A domain hosted somewhere (required for automatic SSL setup)
+* A Google account
+* The [gcloud CLI](https://cloud.google.com/sdk/docs/install) must be installed (the script will guide you through the installation if it's not already installed)
+* macOS with git (install by running `xcode-select --install` in the terminal)
+* (Optional) A Mailgun.com account for email configuration (username and password will be required)
+* A domain already registered and hosted (required for SSL setup)
 
 **Pre-requisites**
 
-1. Visit https://console.cloud.google.com/ in a browser
+1. Visit [Google Cloud](https://console.cloud.google.com/) in a browser
 2. Agree to GCP terms
 3. Add payment info to GCP
 
@@ -32,7 +32,7 @@ bash gcloud_ghost_instancer.sh
 
 **Instructions**
 
-Follow on-screen prompts for customization. If this is your first time using GCP you will be asked to authorize your account with Google and enable API services on your project. Follow the prompts and enter `Yes` and wait this ensures your account has the ability to create the necessary services on GCP using the CLI. The prompts are described below in Post Setup Screen Action Items. Once API services are enabled Secret Manager will be enabled and passwords will be created and stored in the cloud and a local public/private rsa key pair will be generated locally.
+Follow the on-screen instructions for customization. If this is your initial use of GCP, you will need to authorize your account with Google and activate API services for your project. Respond with `Yes` to the prompts and wait, as this step confirms that your account can create the required services on GCP through the CLI. The details of these prompts are outlined in the Post Setup Screen Action Items section below. After API services are activated, the Secret Manager will be enabled, passwords will be generated and securely stored in the cloud, and a local RSA public/private key pair will be created on your machine.
 
 
 **Troubleshooting**
