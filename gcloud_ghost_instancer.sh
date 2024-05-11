@@ -15,7 +15,7 @@ color_text() {
 # For more information about Google Cloud Free Tier micro instances, visit: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits
 initial_prompt() {
   printf "This script will help you set up and run a Google Compute Engine E2-Micro virtual machine with Ghost.org installed.\n\nAn E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB monthly transfer, can run 24/7 and falls under Google Cloud's Always Free Tier, which means you won't incur any costs, subject to Google's terms and usage limits.\nLearn more: https://cloud.google.com/free/docs/free-cloud-features#free-tier-usage-limits\n"
-  color_text green "\nDo you want to proceed? (y/n): "
+  color_text green "\nDo you want to proceed? (Y/n): "
   read -r setup_instance
 
   if [ "$setup_instance" != "y" ]; then
@@ -28,27 +28,21 @@ initial_prompt() {
 # For more information about Google Cloud SDK, visit: https://cloud.google.com/sdk/docs
 check_gcloud_install() {
   if ! command -v gcloud &> /dev/null; then
-  # Explain to the user that gcloud SDK is required
-  printf "gcloud SDK is required to proceed and could not be found.\nLearn more: https://cloud.google.com/sdk/docs\n"
-
-  # Ask the user to proceed
-  color_text green "\nDo you want to proceed with automatically downloading gcloud SDK and adding a shell alias? (y/n): "
+    color_text green "gcloud SDK is required to proceed and could not be found.\nLearn more: https://cloud.google.com/sdk/docs\n\nDo you want to proceed with automatically downloading gcloud SDK and adding a shell alias? (Y/n): "
     read -r install_gcloud
-    if [ "$install_gcloud" = "y" ]; then
-      echo "Installing gcloud..."
-
-      # Download and run the CLI installer
-      curl https://sdk.cloud.google.com | bash -s -- --disable-prompts
-
-      # Update PATH and source bash completion
-      export PATH=$PATH:$HOME/google-cloud-sdk/bin
-      source "$HOME/google-cloud-sdk/completion.bash.inc"
-
-      echo "gcloud installed and environment initialized."
-    else
-      echo "gcloud is required. Exiting."
-      exit 1
-    fi
+    case "${install_gcloud,,}" in  # Converts to lowercase for matching
+      y|yes|"")
+        echo "\nInstalling gcloud..."
+        curl https://sdk.cloud.google.com | bash -s -- --disable-prompts
+        export PATH=$PATH:$HOME/google-cloud-sdk/bin
+        source "$HOME/google-cloud-sdk/completion.bash.inc"
+        echo "gcloud installed and environment initialized."
+        ;;
+      *)
+        echo "\ngcloud is required. Exiting."
+        exit 1
+        ;;
+    esac
   fi
 }
 
@@ -88,20 +82,19 @@ authenticate_and_fetch_project() {
 # Display available zones that support free-tiers along with a corresponding picker to select a zone
 # Prompt user to select a zone based on their geographic preference
 prompt_for_zone() {
-  echo "\nTo create a free E2-Micro instance, you'll need to setup your VM in a colocation facility that supports free-tiers."
+  echo -e "\nTo create a free E2-Micro instance, you'll need to setup your VM in a colocation facility that supports free-tiers."
   echo " 1) Oregon: us-west1"
   echo " 2) Iowa: us-central1"
   echo " 3) South Carolina: us-east1"
-  
-  color_text green "\nSelect a zone that sounds like it's located closest to you: "
+  color_text green "Select a zone that sounds like it's located closest to you (1/2/3): "
   read -r choice
-  
   case "$choice" in
     1) ZONE="us-west1-a" ;;
     2) ZONE="us-central1-a" ;;
     3) ZONE="us-east1-a" ;;
-    *) echo "Invalid choice. Exiting."; exit 1 ;;
+    *) echo "\nInvalid choice. Exiting."; exit 1 ;;
   esac
+  color_text yellow "\nZone set to $ZONE. Continuing...\n"
 }
 
 # Function to extract the region from a GCP zone
@@ -115,29 +108,49 @@ get_region_from_zone() {
 # The URL must start with either 'http://' or 'https://'.
 setup_url() {
   while true; do
-    read -p "Enter your blog URL (include http:// or https://): " url
+    color_text green "\nEnter your blog URL (include http:// or https://): "
+    read -p "" url
 
     # Check if URL is empty
     if [[ -z "$url" ]]; then
-      echo "URL cannot be empty. Please try again."
+      echo -e "\nURL cannot be empty. Please try again."
       continue
     fi
 
     # Check if the URL starts with http:// or https://
     if [[ $url == http://* || $url == https://* ]]; then
       # Confirm the URL
-      read -p "You entered: $url. Is this URL correct? (y/n): " confirmation
-
+      color_text yellow "\nYou entered: $url. Is this URL correct? (Y/n): "
+      read -p "" confirmation
       if [[ "$confirmation" == "N" || "$confirmation" == "n" ]]; then
         continue
       elif [[ "$confirmation" == "Y" || "$confirmation" == "y" ]]; then
-        echo "Will setup Ghost with $url. Continuing..."
+        echo -e "\nWill setup Ghost with $url. Continuing..."
         break
       else
-        echo "Invalid choice. Please enter Y or N."
+        echo -e "\nInvalid choice. Please enter Y or N."
       fi
     else
-      echo "This is not a valid URL. Please enter a URL starting with http:// or https://."
+      echo -e "\nThis is not a valid URL. Please enter a URL starting with http:// or https://."
+    fi
+  done
+}
+
+# This function prompts the user to enter an email address which is required for configuring letsencrypt for SSL setup.
+setup_email() {
+  while true; do
+    color_text green "\nEnter your email address for SSL configuration with Let's Encrypt: "
+    read -p "" email
+    if [[ "$email" =~ ^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,4}$ ]]; then
+      color_text yellow "\nYou entered: $email. Is this email address correct? (Y/n): "
+      read -p "" confirm_email
+      case "$confirm_email" in
+        y|Y) echo -e "\nEmail address confirmed. Continuing...\n"; break;;
+        n|N) echo -e "\nLet's try again."; continue;;
+        *) echo -e "\nInvalid choice. Please enter Y or N.";;
+      esac
+    else
+      echo -e "\nThis is not a valid email address. Please enter a valid email."
     fi
   done
 }
@@ -146,35 +159,52 @@ setup_url() {
 # It gives the user the option to set up Mailgun and collects necessary credentials.
 # The function also lets the user choose the Mailgun SMTP host and confirms the choices before saving.
 setup_mailgun() {
-  read -p "Do you want to setup Ghost to send emails using Mailgun? (y/n): " setup_choice
+  color_text green "Do you want to setup Ghost to send emails using Mailgun? (Y/n): "
+  read -p "" setup_choice
 
-  if [ "$setup_choice" = "n" ]; then
-    return
-  fi
+  case "${setup_choice,,}" in
+    n|no)
+      return
+      ;;
+  esac
 
-  read -p "Have you already set up your mailgun.com account? (y/n): " account_choice
+  color_text green "Have you already set up your mailgun.com account? (Y/n):\n"
+  read -p "" account_choice
 
-  if [ "$account_choice" = "n" ]; then
-    return
-  fi
+  case "${account_choice,,}" in
+    n|no)
+      return
+      ;;
+  esac
 
   while true; do
-    read -p "Enter your mailgun username: " mailgun_username
-    read -p "You entered: $mailgun_username. Is this correct? (y/n): " username_confirm
-    [ "$username_confirm" = "y" ] && break
+    color_text green "Enter your mailgun username:\n"
+    read -p "" mailgun_username
+    read -p "You entered: $mailgun_username. Is this correct? (Y/n): " username_confirm
+    case "${username_confirm,,}" in
+      y|yes|"")
+        break
+        ;;
+    esac
   done
 
   while true; do
-    read -p "Enter your mailgun password: " mailgun_password
-    read -p "You entered: $mailgun_password. Is this correct? (y/n): " password_confirm
-    [ "$password_confirm" = "y" ] && break
+    color_text green "Enter your mailgun password:\n"
+    read -p "" mailgun_password
+    read -p "You entered: $mailgun_password. Is this correct? (Y/n): " password_confirm
+    case "${password_confirm,,}" in
+      y|yes|"")
+        break
+        ;;
+    esac
   done
 
   while true; do
     echo "Select which Mailgun SMTP host you're using:"
     echo "1) smtp.mailgun.org (default)"
     echo "2) smtp.eu.mailgun.org"
-    read -p "Pick by entering the number (1/2): " smtp_choice
+    color_text green "Pick by entering the number (1/2):\n"
+    read -p "" smtp_choice
 
     case $smtp_choice in
       1|"") smtp_mailgun="smtp.mailgun.org"; break;;
@@ -194,15 +224,23 @@ name_instance() {
   while true; do
     # Asks the user if they want to customize the VM name prefix.
     printf "\nThis script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)\n"
-    read -r -p "$(color_text green "\nDo you want to add a customize prefix to your VM? (y/n):") " CUSTOMIZE
+    read -r -p "$(color_text green "\nDo you want to add a customize prefix to your VM? (Y/n):") " CUSTOMIZE
 
-    if [[ "$CUSTOMIZE" == "y" ]]; then
-      # Prompts for a custom VM name prefix if customization is desired.
-      read -r -p "$(color_text green "\nCustomize the prefix for your VM (e.g. 'yourprefix-ghost'):") " CUSTOM_NAME
-    else
-      # Uses the default 'ghost' if no customization is desired.
-      CUSTOM_NAME=""
-    fi
+    case "${CUSTOMIZE,,}" in  # Convert to lowercase
+      y|yes|"")
+        # Prompts for a custom VM name prefix if customization is desired.
+        read -r -p "$(color_text green "\nCustomize the prefix for your VM (e.g. 'yourprefix-ghost'):") " CUSTOM_NAME
+        ;;
+      n|no)
+        # Uses the default 'ghost' if no customization is desired.
+        CUSTOM_NAME=""
+        ;;
+      *)
+        # Ask again if input is not recognized.
+        color_text red "Invalid input. Please answer with Y/n."
+        continue
+        ;;
+    esac
 
     # The full VM name will be in the format <CUSTOM_NAME>-ghost.
     if [[ -z "$CUSTOM_NAME" ]]; then
@@ -220,23 +258,25 @@ name_instance() {
     # Informs the user if any adjustments were made to the name due to GCP rules.
     if [[ "$ORIGINAL_NAME" != "$CUSTOM_NAME" && -n "$ORIGINAL_NAME" ]]; then
       green_text "\nName adjusted to '$INSTANCE_NAME' due to GCP rules. Is this OK?"
-      read -r -p $'\e[92m(y/n):\e[0m ' CONFIRM
-      if [[ "$CONFIRM" == "n" ]]; then
-        continue
-      fi
+      read -r -p $'\e[92m(Y/n):\e[0m ' CONFIRM
+      case "${CONFIRM,,}" in
+        n|no)
+          continue
+          ;;
+      esac
     fi
 
     # Checks if the VM name already exists in the project; if so, prompts for a new name.
     EXISTING_INSTANCE=$(gcloud compute instances list --filter="name=($INSTANCE_NAME)" --format="get(name)")
     if [[ "$EXISTING_INSTANCE" == "$INSTANCE_NAME" ]]; then
-      green_text "\nName '$INSTANCE_NAME' already exists. Choose another."
+      color_text green "\nName '$INSTANCE_NAME' already exists. Choose another."
       continue
     fi
 
     # Once a unique and GCP-compliant name is confirmed, informs the user of the final VM name.
     color_text green "\nYour VM will be named: $INSTANCE_NAME"
-    color_text yellow "\n\nYou can ignore the WARNING you're about see that you have selected a disk size of under [200GB] which may result in poor I/O performance. This is because the free tier is limited.\n\n"
-    color_text yellow "\nYou can also ignore the WARNING you're about see that your disk size: '30 GB' is larger than image size: '10 GB'. Ubuntu Ubunto should automatically resize itself to use all the 30 GB you've allocated during the first boot.\n\n"
+    color_text yellow "\n\nThis free tier is limited, ignore the WARNING you're about to see that you have selected a disk size of under [200GB] which may result in poor I/O performance.\n"
+    color_text yellow "\nYou can also ignore the WARNING that your disk size: '30 GB' is larger than image size: '10 GB'. Ubuntu will automatically resize itself to use all the 30 GB you've allocated during the first boot.\n\n"
     break
   done
 }
@@ -265,6 +305,18 @@ prepare_instance_environment() {
   SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret="service-account-password-$INSTANCE_NAME" --project=$SECRET_PROJECT_ID)
 }
 
+# Function to create a Standard tier static IP address
+create_static_ip() {
+  # Assign a name to the static IP
+  STATIC_IP_NAME="$INSTANCE_NAME-ip"
+
+  # Create a Standard tier static IP address
+  gcloud compute addresses create $STATIC_IP_NAME --region=$REGION --network-tier=STANDARD
+
+  # Get the static IP address
+  STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
+}
+
   # Retrieve MySQL password from Google Secret Manager
   # Check for existing firewall rule for SMTP port 2525, create if not found
   # Create Google Cloud Compute Engine instance with specified parameters
@@ -275,75 +327,86 @@ prepare_instance_environment() {
   # Initialize instance with a startup script to configure users, permissions, and SSH keys
   # Loop until SSH is available on the new instance, then exit
 create_instance() {
-# Retrieve the secret from Google Secret Manager
-mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
+    # Retrieve the secret from Google Secret Manager
+    mysql_password=$(gcloud secrets versions access latest --secret="$secret_name")
 
-# Check if the firewall rule for sending email exists
-if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
-    echo "\nFirewall rule allow-outgoing-2525 already exists."
-else
-    # Create the firewall rule
-    gcloud compute firewall-rules create allow-outgoing-2525 \
-        --direction=EGRESS \
-        --network=default \
-        --action=ALLOW \
-        --rules=tcp:2525 \
-        --destination-ranges=0.0.0.0/0 \
-        --target-tags=mail
-fi
+    # Check if the firewall rule for sending email exists
+    if gcloud compute firewall-rules describe allow-outgoing-2525 &>/dev/null; then
+        echo "\nFirewall rule allow-outgoing-2525 already exists."
+    else
+        # Create the firewall rule
+        gcloud compute firewall-rules create allow-outgoing-2525 \
+            --direction=EGRESS \
+            --network=default \
+            --action=ALLOW \
+            --rules=tcp:2525 \
+            --destination-ranges=0.0.0.0/0 \
+            --target-tags=mail
+    fi
 
-# This command creates a Google Cloud Compute Engine instance with the specified parameters, including machine type, image, disk size, and metadata for startup script.
-# The startup-script initializes important variables, sets passwords for root and service-account users, ensures .ssh directories exist and populates authorized_keys.
-# The SSH Checker waits for the SSH to become available before proceeding to the next step.
-  gcloud compute instances create $INSTANCE_NAME \
-    --zone=$ZONE \
-    --machine-type=e2-medium \
-    --image-project=ubuntu-os-cloud \
-    --image-family=ubuntu-2204-lts \
-    --boot-disk-size=30GB \
-    --boot-disk-type=pd-standard \
-    --tags=mail,http-server,https-server \
-    --no-shielded-secure-boot \
-    --no-shielded-vtpm \
-    --no-shielded-integrity-monitoring \
-    --scopes=https://www.googleapis.com/auth/cloud-platform \
-    --service-account service-account@$PROJECT_ID.iam.gserviceaccount.com \
-    --metadata-from-file ssh-keys-for-root=$HOME/.ssh/root_key-${INSTANCE_NAME}.pub,ssh-keys-for-service-account=$HOME/.ssh/service_account_key-${INSTANCE_NAME}.pub \
-    --metadata startup-script='#!/bin/bash
-    # Variables
-    INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/name")
-    PROJECT_ID=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/project/project-id")
+    # Create a Google Cloud Compute Engine instance with specified parameters
+    gcloud compute instances create $INSTANCE_NAME \
+        --zone=$ZONE \
+        --machine-type=e2-medium \
+        --image-project=ubuntu-os-cloud \
+        --image-family=ubuntu-2204-lts \
+        --boot-disk-size=30GB \
+        --boot-disk-type=pd-standard \
+        --tags=mail,http-server,https-server \
+        --no-shielded-secure-boot \
+        --no-shielded-vtpm \
+        --no-shielded-integrity-monitoring \
+        --scopes=https://www.googleapis.com/auth/cloud-platform \
+        --service-account service-account@$PROJECT_ID.iam.gserviceaccount.com \
+        --metadata-from-file ssh-keys-for-root=$HOME/.ssh/root_key-${INSTANCE_NAME}.pub,ssh-keys-for-service-account=$HOME/.ssh/service_account_key-${INSTANCE_NAME}.pub \
+        --network-tier=STANDARD \
+        --address=$STATIC_IP \
+        --metadata startup-script='#!/bin/bash
+        # Configuring Passwordless sudo for service-account
+        echo "service-account ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/service-account
+        chmod 0440 /etc/sudoers.d/service-account
+        # Variables
+        INSTANCE_NAME=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/instance/name")
+        PROJECT_ID=$(curl -H "Metadata-Flavor: Google" "http://metadata.google.internal/computeMetadata/v1/project/project-id")
 
-    # Set root password
-    ROOT_PASSWORD=$(gcloud secrets versions access latest --secret="root-password-${INSTANCE_NAME}" --project=${PROJECT_ID})
-    echo "root:${ROOT_PASSWORD}" | chpasswd
+        # Set root password
+        ROOT_PASSWORD=$(gcloud secrets versions access latest --secret="root-password-${INSTANCE_NAME}" --project=${PROJECT_ID})
+        echo "root:${ROOT_PASSWORD}" | chpasswd
 
-    # Create and set service-account password
-    SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret="service-account-password-${INSTANCE_NAME}" --project=${PROJECT_ID})
-    useradd service-account
-    echo "service-account:${SERVICE_ACCOUNT_PASSWORD}" | chpasswd
-    usermod -aG sudo service-account
+        # Create and set service-account password
+        SERVICE_ACCOUNT_PASSWORD=$(gcloud secrets versions access latest --secret="service-account-password-${INSTANCE_NAME}" --project=${PROJECT_ID})
+        useradd service-account
+        echo "service-account:${SERVICE_ACCOUNT_PASSWORD}" | chpasswd
+        usermod -aG sudo service-account
 
-    # Make sure .ssh directories exist
-    mkdir -p /root/.ssh
-    mkdir -p /home/service-account/.ssh
-    chown service-account:service-account /home/service-account/.ssh
+        # Make sure .ssh directories exist
+        mkdir -p /root/.ssh
+        mkdir -p /home/service-account/.ssh
+        chown service-account:service-account /home/service-account/.ssh
 
-    # Add authorized keys
-    echo "$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/ssh-keys-for-root)" >> /root/.ssh/authorized_keys
-    echo "$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/ssh-keys-for-service-account)" >> /home/service-account/.ssh/authorized_keys
-    '
+        # Set correct ownership and permissions for /home/service-account
+        chown -R service-account:service-account /home/service-account
+        chmod 755 /home/service-account
 
-# Loop until SSH is available for the given Google Cloud Compute instance
-# Try to run a simple echo command on the remote server to check SSH connectivity
-# If unsuccessful, wait for 5 seconds before retrying
-# Exit the loop once SSH is available and echo "SSH is now available."
-  until gcloud compute ssh $INSTANCE_NAME --zone $ZONE --command "echo connected" &> /dev/null
-  do
-    echo "Waiting for SSH to be available..."
-    sleep 5
-  done
-  echo "SSH is now available."
+        # Add authorized keys
+        echo "$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/ssh-keys-for-root)" >> /root/.ssh/authorized_keys
+        echo "$(curl -H "Metadata-Flavor: Google" http://metadata.google.internal/computeMetadata/v1/instance/attributes/ssh-keys-for-service-account)" >> /home/service-account/.ssh/authorized_keys
+        '
+
+    # Retrieve the instance IP
+    INSTANCE_IP=$(gcloud compute instances describe $INSTANCE_NAME --zone=$ZONE --format='get(networkInterfaces[0].accessConfigs[0].natIP)')
+    echo "Your VM is ready BUT before proceeding..."
+    color_text yellow "Update your DNS settings to point $url to $STATIC_IP.\n"
+    echo -n "After updating, press Enter to continue..."
+    read -r
+
+    # Loop until SSH is available for the Google Cloud Compute instance
+    until gcloud compute ssh $INSTANCE_NAME --zone $ZONE --command "echo connected" &> /dev/null
+    do
+        echo "Waiting for SSH to be available..."
+        sleep 5
+    done
+    echo "SSH is now available."
 }
 
 # This function handles SSHing into the Google Cloud instance and executing a remote script.
@@ -387,11 +450,14 @@ ssh_instance() {
 # 2) Download a shell script that installs Ghost from a GitHub repository
 # 3) Make the downloaded script executable
 # 4) Execute the script
-ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<'ENDSSH'
+ssh -t -o IdentitiesOnly=yes -o StrictHostKeyChecking=no -i $HOME/.ssh/service_account_key-${INSTANCE_NAME} service-account@$INSTANCE_IP <<ENDSSH
+export SERVICE_ACCOUNT_PASSWORD="\$(gcloud secrets versions access latest --secret="service-account-password-$INSTANCE_NAME")"
 screen -S ghost_install
+mkdir -p /tmp/ghost_install
+cd /tmp/ghost_install
 curl -O https://raw.githubusercontent.com/danielraffel/gcloud_ghost_instancer/main/install_on_server.sh
 chmod +x install_on_server.sh
-sh ./install_on_server.sh
+INSTANCE_NAME="$INSTANCE_NAME" bash -x ./install_on_server.sh
 ENDSSH
 
       SSH_EXIT_CODE=$?
@@ -437,19 +503,36 @@ check_and_enable_secret_manager() {
 # The generated password is stored in Google Cloud's Secret Manager under the generated secret name.
 # If needed, the function can overwrite an existing secret instead of creating a new one.
 generate_and_store_password() {
-  # Generate a secure 32-character password
-  password=$(openssl rand -base64 32)
+    # Generate a secure 32-character password
+    password=$(openssl rand -base64 32)
 
-  # Create a secret name based on the type and instance name
-  secret_name="$1-password-$INSTANCE_NAME"
+    # Create a secret name based on the type and instance name
+    secret_name="$1-password-$INSTANCE_NAME"
 
-  # Create the secret in Google Cloud Secret Manager
-  printf "%s" "$password" | gcloud secrets create "$secret_name" --data-file=-
-  
-  # If you want to overwrite an existing secret, use the following line instead
-  # printf "%s" "$password" | gcloud secrets versions add "$secret_name" --data-file=-
+    # Check if the secret already exists
+    if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
+        # Secret exists, add a new version
+        version_info=$(printf "%s" "$password" | gcloud secrets versions add "$secret_name" --data-file=- --format="value(name)")
+        latest_version=$(echo "$version_info" | awk -F'/' '{print $NF}')
 
-  echo "Password generated and stored as $secret_name"
+        echo "Password updated for $secret_name with new version $version_info"
+
+        # Retrieve all versions of the secret
+        versions=$(gcloud secrets versions list "$secret_name" --format="value(name)")
+
+        # Iterate over the versions and destroy the older ones
+        for version in $versions; do
+            version_number=$(echo "$version" | awk -F'/' '{print $NF}')
+            if [[ "$version_number" != "$latest_version" ]]; then
+                gcloud secrets versions destroy "$version_number" --secret="$secret_name" --quiet
+                echo "Deleted older version $version_number of secret $secret_name"
+            fi
+        done
+    else
+        # Secret doesn't exist, create a new one
+        gcloud secrets create "$secret_name" --data-file=- <<< "$password"
+        echo "Password generated and stored as $secret_name"
+    fi
 }
 
 # This function prepares and stores the setup parameters needed for installing Ghost.
@@ -457,17 +540,44 @@ generate_and_store_password() {
 # If setup_mail is defined and non-empty, it appends these mail setup parameters to ghost_install_setup_parameters.
 # Finally, this concatenated string is saved as a Google Cloud secret, allowing it to be securely accessed later on the server.
 custom_ghost_setup_parameters() {
-  
-  # Initialize ghost_install_setup_parameters with url
-  local ghost_install_setup_parameters="--url $url"
-  
-  # Check if setup_mail exists and has content, if so append to ghost_install_setup_parameters
-  if [ -n "$setup_mail" ]; then
-    ghost_install_setup_parameters="$ghost_install_setup_parameters $setup_mail"
-  fi
+    # Prepare the project name by replacing dots and slashes from the URL
+    pname=$(echo "$url" | sed 's/https:\/\///;s/http:\/\///;s/\./-/g')
+    
+    # Initialize ghost_install_setup_parameters with URL
+    local ghost_install_setup_parameters="--url $url --sslemail $email --pname $pname --log file"
 
-  # Save ghost_install_setup_parameters to gCloud secret
-  printf "%s" "$ghost_install_setup_parameters" | gcloud secrets create "ghost_install_setup_parameters-$INSTANCE_NAME" --data-file=-
+    # Check if setup_mail exists and has content, if so append to ghost_install_setup_parameters
+    if [ -n "$setup_mail" ]; then
+        ghost_install_setup_parameters="$ghost_install_setup_parameters $setup_mail"
+    fi
+
+    # Define the secret name
+    secret_name="ghost_install_setup_parameters-$INSTANCE_NAME"
+
+    # Check if the secret already exists
+    if gcloud secrets describe "$secret_name" >/dev/null 2>&1; then
+        # Secret exists, add a new version
+        version_info=$(printf "%s" "$ghost_install_setup_parameters" | gcloud secrets versions add "$secret_name" --data-file=- --format="value(name)")
+        latest_version=$(echo "$version_info" | awk -F'/' '{print $NF}')
+
+        echo "Updated $secret_name with new version $version_info"
+
+        # Retrieve all versions of the secret
+        versions=$(gcloud secrets versions list "$secret_name" --format="value(name)")
+
+        # Iterate over the versions and destroy the older ones
+        for version in $versions; do
+            version_number=$(echo "$version" | awk -F'/' '{print $NF}')
+            if [[ "$version_number" != "$latest_version" ]]; then
+                gcloud secrets versions destroy "$version_number" --secret="$secret_name" --quiet
+                echo "Deleted older version $version_number of secret $secret_name"
+            fi
+        done
+    else
+        # Secret doesn't exist, create a new one
+        gcloud secrets create "$secret_name" --data-file=- <<< "$ghost_install_setup_parameters"
+        echo "Password generated and stored as $secret_name"
+    fi
 }
 
 # This function is responsible for generating SSH keys, creating a GCP service account, and storing certain variables for later use.
@@ -484,16 +594,30 @@ create_keys() {
   # Fetch the Compute Engine default service account email and store it in a variable
   SERVICE_ACCOUNT_EMAIL=$(gcloud iam service-accounts list --format='value(email)' --filter='displayName:"Compute Engine default service account"')
 
-# Create GCP service account
-gcloud iam service-accounts create service-account --display-name "service-account"
-gcloud projects add-iam-policy-binding $PROJECT_ID \
-  --member serviceAccount:service-account@$PROJECT_ID.iam.gserviceaccount.com \
-  --role roles/secretmanager.secretAccessor
+  # Create GCP service account
+  gcloud iam service-accounts create service-account --display-name "service-account"
 
-# Update the IAM role for the Compute Engine default service account
-gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
---member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
---role="roles/secretmanager.secretAccessor"
+  # Grant necessary roles to the service account
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:service-account@$PROJECT_ID.iam.gserviceaccount.com \
+    --role roles/secretmanager.secretAccessor
+
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:service-account@$PROJECT_ID.iam.gserviceaccount.com \
+    --role roles/compute.instanceAdmin.v1
+
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:service-account@$PROJECT_ID.iam.gserviceaccount.com \
+    --role roles/compute.osLogin
+
+  gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member serviceAccount:service-account@$PROJECT_ID.iam.gserviceaccount.com \
+    --role roles/iam.serviceAccountUser
+
+  # Update the IAM role for the Compute Engine default service account
+  gcloud secrets add-iam-policy-binding service-account-password-$INSTANCE_NAME \
+    --member="serviceAccount:$SERVICE_ACCOUNT_EMAIL" \
+    --role="roles/secretmanager.secretAccessor"
 
   # Write setup variables to a file for use when resizing the instance in downgrade_instance
   echo "INSTANCE_NAME=$INSTANCE_NAME" > $HOME/temp_vars.sh
@@ -518,15 +642,6 @@ downgrade_instance() {
   # change the machine type from e2-medium to e2-micro
   gcloud compute instances set-machine-type $INSTANCE_NAME --zone=$ZONE --machine-type=e2-micro
 
-  # Assign a name to the static IP
-  STATIC_IP_NAME="$INSTANCE_NAME-ip"
-
-  # Create a Standard tier static IP address
-  gcloud compute addresses create $STATIC_IP_NAME --region=$REGION --network-tier=STANDARD
-
-  # Get the static IP address
-  STATIC_IP=$(gcloud compute addresses describe $STATIC_IP_NAME --region=$REGION --format='get(address)')
-
   # Remove any existing external IP from micro-instance
   gcloud compute instances delete-access-config $INSTANCE_NAME --zone=$ZONE --access-config-name="$INSTANCE_ACCESS_CONFIG"
 
@@ -545,8 +660,13 @@ downgrade_instance() {
   # Share machine IP address
   color_text green "\nYour VM is now running at: $STATIC_IP\n"
 
-  # Remove the host key for the instance from the local known_hosts file in case it was previously added
-  # ssh-keygen -R $STATIC_IP
+  # Provide the user with the SSH command to manually connect to the instance
+  color_text yellow "\nTo manually SSH into your instance in the future, run the following command:\n"
+  color_text blue "ssh -i ~/.ssh/service_account_key-$INSTANCE_NAME service-account@$STATIC_IP\n"
+
+  # Provide the user with info if the SSH key won't work
+  color_text yellow "\nIf you get an error when you SSH don't worry just run this command and then try to SSH in again:\n"
+  color_text blue "ssh-keygen -R $STATIC_IP\n"
 
   # Add the static IP address to Known Hosts file
   ssh-keyscan -H $STATIC_IP >> $HOME/.ssh/known_hosts
@@ -611,6 +731,7 @@ ENDSSH
     prompt_for_zone
     get_region_from_zone
     setup_url
+    setup_email
     setup_mailgun
     name_instance
     check_and_enable_secret_manager
@@ -619,6 +740,7 @@ ENDSSH
     generate_and_store_password "mysql"
     custom_ghost_setup_parameters
     create_keys
+    create_static_ip
     create_instance
     ssh_instance
     downgrade_instance
