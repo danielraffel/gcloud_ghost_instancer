@@ -14,19 +14,7 @@ At time of writing an E2-Micro instance has up to 1GB RAM, 30GB storage, 1TB mon
 * [gcloud CLI](https://cloud.google.com/sdk/docs/install) installed (if not pre-installed the script will assist installing it for you)
 * macOS
 * Previously set up [Mailgun.com](Mailgun.com) account if you want to configure sending emails (you'll need to provide your username/password)
-* A domain hosted on Cloudflare (required for automatic SSL setup)
-
-**Automatic Cloudflare Setup**
-
-The script now automatically sets up Cloudflare for SSL and configures a tunnel to route traffic to Ghost. To use this feature, you must have your domain hosted on Cloudflare.
-
-When the script runs on your server, it will display a Cloudflare URL in the terminal. Simply copy this URL and open it in your browser to complete the setup.
-
-The script will:
-
-* Download and install cloudflared
-* Create a Cloudflare tunnel
-* Configure the tunnel to route traffic to Ghost at your domain
+* A domain hosted somewhere (required for automatic SSL setup)
 
 **Pre-requisites**
 
@@ -42,7 +30,7 @@ The script will:
 ```
 git clone git@github.com:danielraffel/gcloud_ghost_instancer.git
 cd repo-directory
-sh gcloud_ghost_instancer.sh
+bash gcloud_ghost_instancer.sh
 ```
 
 **Instructions**
@@ -65,12 +53,16 @@ Follow on-screen prompts for customization. If this is your first time using GCP
    * **root** `root-password-YOUR.INSTANCE.NAME-ghost`
 * The script `gcloud_ghost_instancer.sh` asks how you want to customize your Ghost install. The parameters you define during setup are stored in `ghost_install_setup_parameters-YOUR.INSTANCE.NAME-ghost` in [Google Secret Manager](https://cloud.google.com/secret-manager/) and appended to the Ghost installer on your VM at runtime as follows. This is a complate list of the parameters that are passed:
 ```
-ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --no-stack --port 2368 --ip 127.0.0.1
+ghost install $ghost_install_setup_parameters --setup-mysql --setup-nginx --setup-ssl --setup-systemd --db mysql --dbhost localhost --dbuser root --dbpass $mysql_password --dbname ghost_prod --process systemd --enable --log file --no-stack --port 2368 --ip 127.0.0.1
 ```
-* The content of `ghost_install_setup_parameters` will:
-   * **Always** include the URL where you will host Ghost
+* The content of `ghost_install_setup_parameters` will always include:
+   * the URL where you will host Ghost
 `--url $url`
-   * **Optionally** include Mailgun settings if you opt to share your `mailgun_username` and `mailgun_username` with the installer:
+   * the email address LetsEncrypt will use to register your sites SSL cert
+`--sslemail $email`
+   * a modified version of your sites DNS name in the format site-domain-com 
+`--pname $pname`
+   * **Optionally** may include Mailgun settings if you opt to share your `mailgun_username` and `mailgun_username` with the installer:
 ```
 --mail SMTP --mailservice Mailgun --mailuser $mailgun_username --mailpass $mailgun_username --mailhost $smtp_mailgun --mailport 2525
 ```
@@ -103,27 +95,9 @@ sql_file
 sql_file2
 ```
 
-**FAQs specific to Cloudflare:**
-
-Managing Cloudflared Tunnels When SSHd On Server:
-* List: `cloudflared tunnel list`
-* Delete: `cloudflared tunnel delete <tunnel_name>`
-
-Managing Cloudflared Service:
-* Start/Stop: `sudo systemctl start/stop cloudflared`
-* Check Status: `sudo systemctl status cloudflared`
-
-**Deleting Cloudflare Resources Created by This Script:**
-
-On Cloudflare.com:
-
-1. Tunnel: A tunnel is created which can be deleted by navigating to Zero Trust > Access > Tunnels in the Cloudflare Dashboard (login required).
-2. Subdomain with Tunnel: A subdomain is created on your chosen domain with a tunnel. This can be deleted by going to your domain's DNS settings at Choose your domain > DNS in the Cloudflare Dashboard (login required) and looking for the CNAME on your Domain.
-
 **Known Issues**
 
 * Installer is not optimized to be installed on a free-tier E2-Micro
-* Ghost installation presents a few errors but is still functional. This is likely due to the installer running in a pseudo terminal and as far as I know are not actual issues.
 * Not tested on Linux / Windows. To run this on platforms you will need the [Google Cloud CLI](https://cloud.google.com/sdk/docs/install). The script checks and installs this for macOS but doesn't do that for other platforms.
 * SSL was setup with a no-prompt installer. And, this may only supports https. I don't know that for certain so for now the script doesn't currently block setting up http Blog URLs.
 * I have not personally tested end-to-end Mailgun setup with these flows (but it likely works since it leans on the script just collecting parameters and passing them to Ghost installer to generate the config correctly.) 
@@ -134,10 +108,9 @@ On Cloudflare.com:
 * The script likely contain bugs. Please use it at your own risk.
 * Learn about [Google Secret Manager](https://cloud.google.com/secret-manager/)
 
-
 **Potential Future Enhancements**
 
-* Explore ways to customize additional install options.
+* Explore ways to customize additional install options such as using Cloudflare Tunnels.
 
 **Setup Screen Action Items**
 Below are the steps you'll be walked through in the script.
@@ -161,25 +134,29 @@ _Select a zone that sounds like it's located closest to you: 1_
 * _You entered: https://ketchup.com. Is this URL correct? (y/n): y_
 * Will setup Ghost with https://ketchup.com. Continuing...
 
-**Step 4)** Do you want to setup Ghost to send emails using Mailgun? (y/n):
+**Step 4)** nEnter your email address for SSL configuration with Let's Encrypt: username@domain.com
+* _You entered: username@domain.com. Is this URL correct? (y/n): y_
+* Email address confirmed. Continuing...
+
+**Step 5)** Do you want to setup Ghost to send emails using Mailgun? (y/n):
 * Note: if you select yes you'll need to have your mailgun username and password handy
 
-**Step 5)** This script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)
+**Step 6)** This script will create a VM named 'ghost' you have the option to add a custom prefix (eg daniel-ghost)
 * _Do you want to add a customize prefix to your VM? (y/n): y_
 * _Customize the prefix for your VM (e.g. 'yourprefix-ghost'):: ketchup_
 * Your VM will be named: ketchup-ghost
 
-**Step 6)** Creates SSH keys for service-account VM user on your local machine @ `$HOME/.ssh/service_account_key-ketchup-ghost`
+**Step 7)** Creates SSH keys for service-account VM user on your local machine @ `$HOME/.ssh/service_account_key-ketchup-ghost`
 * _Note: you'll be asked to simply press return (no need to enter a password)_
    * Enter passphrase (empty for no passphrase):
    * Enter same passphrase again:
 
-**Step 7)** Creates SSH keys for root VM user on your local machine @ `$HOME/.ssh/root_key-ketchup-ghost`
+**Step 8)** Creates SSH keys for root VM user on your local machine @ `$HOME/.ssh/root_key-ketchup-ghost`
 * _Note: similar to step 6 you'll be asked to simply press return (no need to enter a password)_
    * Enter passphrase (empty for no passphrase):
    * Enter same passphrase again:
 
-**Last Bits** Assuming all runs smoothly the rest of the installer is automated. It should end with these things being installed
+**Remaining Bits** Assuming all runs smoothly the rest of the installer is mostly automated. You'll be asked to configure your DNS to your Virtual Machines static IP address before continuing so that LetsEncrypt can access and verify the hostname for your site. Upon completion your site should end with these things being installed
 
 ```
 Blog URL: https://ketchup.com
