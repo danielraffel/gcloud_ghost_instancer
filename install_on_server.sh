@@ -12,11 +12,14 @@ install_ghost_dependencies() {
     sudo apt install -y ca-certificates curl gnupg
     sudo mkdir -p /etc/apt/keyrings
     curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | sudo gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg
-    NODE_MAJOR=18
+    NODE_MAJOR=22
     echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_$NODE_MAJOR.x nodistro main" | sudo tee /etc/apt/sources.list.d/nodesource.list
     sudo apt update
     sudo apt install nodejs -y
     sudo npm install -g npm@latest
+    # Ensure Node 22 is active for Ghost v6 installs
+    sudo npm install -g n
+    sudo n 22
 
     # Install MySQL
     sudo apt install -y mysql-server
