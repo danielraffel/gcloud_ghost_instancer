@@ -4,7 +4,7 @@
 
 This script aims to facilliate setting up a self-hosted [Ghost.org](Ghost.org) instance on Google Cloud without a lot of hassle. I recently embarked on learning more about Google's Cloud and decided to automate this process, using the Google Cloud Command Line Interface (CLI) and various Google services. Google Cloud has a free-tier E2-Micro instance server ideal for running low traffic websites or blogs. I figured why not make it accessible to more people?
 
-This installer is compatible with Ghost v6. It configures Node 22 during setup to satisfy Ghost v6’s Node requirement.
+**This installer is compatible with Ghost v6. It configures Node 22 during setup to satisfy Ghost v6’s Node requirement.**
 
 While attempting to run this installer on an E2-Micro (1GB) instance, I encountered frequent timeouts and maxed-out memory. Even upgrading to an E2-Small (2GB) didn't solve the issue. Ultimately, I opted for an E2-Medium (4GB) instance to ensure stability for setup. And, downgraded to an E2-Micro post setup. This involves a minimal one-time fee, amounting to just a few cents, but if you have free credits, there will be no cost.
 
