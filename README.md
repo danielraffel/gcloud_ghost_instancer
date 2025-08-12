@@ -1,5 +1,7 @@
 # [Blog Post](https://danielraffel.me/2023/09/18/learning-about-google-cloud-by-developing-a-ghost-org-installer/) covering additional details about this project
 
+_**Updated 8/11/2025 to support Ghost v6**_
+
 **About**
 
 This script aims to facilliate setting up a self-hosted [Ghost.org](Ghost.org) instance on Google Cloud without a lot of hassle. I recently embarked on learning more about Google's Cloud and decided to automate this process, using the Google Cloud Command Line Interface (CLI) and various Google services. Google Cloud has a free-tier E2-Micro instance server ideal for running low traffic websites or blogs. I figured why not make it accessible to more people?
